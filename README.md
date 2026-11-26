@@ -2,7 +2,7 @@
 
 **Quando o time trabalha com IA, o trabalho anda no PR, no terminal do agente e na conversa, e o card fica para trás. O Jirafalis devolve ao gestor um retrato confiável do fluxo e diz se cada falha veio do processo, da pessoa ou da IA.**
 
-🔗 **Protótipo navegável:** https://sidneydiaraujo.github.io/jirafalis/ (dados fictícios, não precisa instalar nada)
+🔗 **Protótipo navegável:** https://sidneydiaraujo.github.io/inspetor.ia/ (dados fictícios, não precisa instalar nada)
 
 ![Mesa do dia](prints/6-mesa.png)
 
@@ -79,7 +79,7 @@ Fiz o produto de ponta a ponta, como Scrum Master que constrói as ferramentas q
 
 ## Como ver
 
-Abra o [protótipo publicado](https://sidneydiaraujo.github.io/jirafalis/) ou clone o repositório e abra `index.html` no navegador. Não há build nem dependências.
+Abra o [protótipo publicado](https://sidneydiaraujo.github.io/inspetor.ia/) ou clone o repositório e abra `index.html` no navegador. Não há build nem dependências.
 
 ## Licença
 

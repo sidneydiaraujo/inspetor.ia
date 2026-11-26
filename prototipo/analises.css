@@ -1,0 +1,18 @@
+/* Inspetor Jirafalis · protótipo. Causa da falha, escrita do ticket e revisão (analises.js). */
+.jf-causa { background: var(--alto); border-left: 3px solid var(--mudo); border-radius: 10px; padding: 9px 11px; font-size: 13px; display: grid; gap: 4px; }
+.jf-causa.processo { border-left-color: #6cc4b2; } .jf-causa.pessoa { border-left-color: var(--ambar); } .jf-causa.ia { border-left-color: #8fb6dc; }
+.jf-causa small { color: var(--mudo); }
+.jf-causa ul { margin: 2px 0 0 16px; padding: 0; color: var(--mudo); }
+.jf-n { font: 400 11.5px "Instrument Sans", system-ui, sans-serif; color: var(--apagado); text-transform: none; letter-spacing: 0; margin-left: 6px; }
+.jf-escrita { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.jf-escrita th { text-align: left; color: var(--apagado); font-weight: 500; padding: 3px 6px 3px 0; border-bottom: 1px solid var(--linha); }
+.jf-escrita td { padding: 5px 6px 5px 0; border-bottom: 1px solid var(--linha); vertical-align: top; }
+.jf-escrita td.alerta { color: #f2a38a; } .jf-escrita td.ok { color: #a5d36c; }
+.jf-grau { font-size: 10.5px; border-radius: 99px; padding: 0 6px; border: 1px solid var(--linha); color: var(--mudo); white-space: nowrap; }
+.jf-grau.certeza { border-color: #6cc4b2; color: #6cc4b2; }
+.jf-nota { font-size: 12px; color: var(--mudo); margin: 6px 0 0; }
+.jf-motivo { display: grid; gap: 6px; margin-top: 8px; font-size: 13px; }
+.jf-motivo[hidden] { display: none; }
+.jf-motivo label { display: grid; gap: 4px; } .jf-motivo small { color: var(--mudo); }
+.jf-meio { color: var(--ambar); }
+.jf-arvore { margin: 0; padding-left: 18px; display: grid; gap: 5px; font-size: 12.5px; }

@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jirafalis · Mapa de atuação (protótipo constelação)</title>
+<!-- Inspetor Jirafalis · protótipo de interface. Dados fictícios. © Sidney de Araújo Silva. -->
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap");
+:root {
+  --chao: #17120c; --raia: #211a12; --alto: #2c2319; --linha: #3a2e21; --ink: #f3e9da; --mudo: #b2a28b; --apagado: #7a6c5a;
+  --ambar: #e8b456; --ambar-escuro: #b07a22; --acacia: #a5d36c; --perigo: #f2a38a; --sobre-cor: #241805;
+  --ceu: #120e09; --sombra: 0 18px 48px rgba(0,0,0,.45); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--chao); color: var(--ink); font: 14px/1.4 "Atkinson Hyperlegible", "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--ambar); outline-offset: 2px; }
+.tela { height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; padding: 10px 12px; }
+
+.topo { display: flex; gap: 16px; align-items: center; padding: 6px 14px 6px 6px; border-radius: 20px; background: var(--raia); }
+.marca { display: flex; gap: 10px; align-items: center; }
+.marca svg { width: 40px; height: 40px; }
+.marca h1 { font: 700 19px/1 "Bricolage Grotesque", sans-serif; margin: 0; letter-spacing: -.02em; }
+.marca h1 span { color: var(--ambar); }
+.marca small { color: var(--mudo); font-size: 12.5px; }
+.filtros { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; align-items: center; }
+.pilula { font-size: 12.5px; border: 1px solid var(--linha); border-radius: 99px; padding: 4px 11px; color: var(--mudo); background: transparent; }
+.pilula[aria-pressed=true] { border-color: var(--ambar); color: var(--ambar); font-weight: 700; }
+.sep { width: 1px; height: 22px; background: var(--linha); margin: 0 4px; }
+
+.corpo { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 10px; min-height: 0; }
+.ceu { position: relative; background: radial-gradient(ellipse at 50% 120%, #2a1f12 0%, var(--ceu) 60%); border-radius: 20px; overflow: hidden; min-height: 0; }
+.ceu svg { width: 100%; height: 100%; display: block; }
+.ceu.sobrio .poeira { display: none; }
+.legenda { position: absolute; left: 14px; bottom: 10px; display: flex; gap: 14px; font-size: 12px; color: var(--mudo); background: rgba(18,14,9,.7); padding: 5px 10px; border-radius: 10px; }
+.legenda i { display: inline-block; border-radius: 50%; vertical-align: -1px; margin-right: 5px; }
+
+/* elementos do céu */
+.etapa-nome { font: 650 12px "Bricolage Grotesque", sans-serif; fill: var(--mudo); text-anchor: middle; letter-spacing: .02em; }
+.time-nome { font: 700 13px "Bricolage Grotesque", sans-serif; fill: var(--ink); }
+.time-sub { font-size: 11px; fill: var(--apagado); }
+.rota { stroke: var(--linha); stroke-width: 1.2; fill: none; }
+.estrela-fixa { fill: var(--apagado); }
+.rastro-velho { stroke: var(--apagado); stroke-opacity: .35; stroke-width: 1; stroke-dasharray: 2 4; fill: none; }
+.rastro { stroke: var(--mudo); stroke-opacity: .55; stroke-width: 1.4; fill: none; }
+.rastro.sel { stroke: var(--ambar); stroke-opacity: 1; stroke-width: 2.2; }
+.pessoa { cursor: pointer; }
+.pessoa .nucleo { transition: r .25s; }
+.pessoa.saudavel .nucleo { fill: #d9cdb8; fill-opacity: .55; }
+.pessoa.atencao .nucleo { fill: var(--ambar); }
+.pessoa.critico .nucleo { fill: #ffd6a0; }
+.pessoa .halo { fill: none; }
+.pessoa.atencao .halo { fill: var(--ambar); fill-opacity: .16; }
+.pessoa.critico .halo { fill: var(--perigo); fill-opacity: .28; animation: respira 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes respira { 50% { transform: scale(1.35); fill-opacity: .12; } }
+.pessoa .rotulo { font: 650 11.5px "Bricolage Grotesque", sans-serif; fill: var(--mudo); }
+.pessoa.atencao .rotulo, .pessoa.critico .rotulo { fill: var(--ink); }
+.pessoa.sel .anel { stroke: var(--ambar); stroke-width: 1.5; fill: none; }
+.pessoa:focus { outline: none; } .pessoa:focus-visible .anel { stroke: var(--ink); stroke-width: 2; fill: none; }
+.esmaecido { opacity: .18; }
+
+.dica { position: absolute; pointer-events: none; background: var(--ink); color: var(--chao); border-radius: 12px; padding: 8px 11px; font-size: 13px; box-shadow: var(--sombra);
+  display: none; gap: 9px; align-items: center; max-width: 280px; z-index: 3; }
+.dica.on { display: flex; }
+.dica b { font: 700 13px "Bricolage Grotesque"; display: block; }
+.rosto { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 700 12px "Bricolage Grotesque"; color: var(--sobre-cor); flex: none; }
+
+/* lateral: lista do que pede atenção ou detalhe da pessoa */
+.lado { background: var(--raia); border-radius: 20px; overflow: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; scrollbar-width: thin; scrollbar-color: var(--linha) transparent; }
+.lado h2 { font: 700 16px "Bricolage Grotesque"; margin: 0; }
+.lado h3 { font: 650 12px "Bricolage Grotesque"; color: var(--mudo); margin: 0 0 6px; text-transform: uppercase; letter-spacing: .04em; }
+.mudo { color: var(--mudo); }
+.fila { display: grid; gap: 6px; }
+.fila button { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; text-align: left; border: 1px solid var(--linha); background: var(--alto); border-radius: 12px; padding: 8px 10px; }
+.fila button:hover { border-color: var(--apagado); }
+.fila small { display: block; color: var(--mudo); font-size: 12px; }
+.sinal { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+.sinal.critico { background: var(--perigo); color: var(--chao); }
+.sinal.atencao { background: rgba(232,180,86,.22); color: var(--ambar); }
+.sinal.saudavel { background: rgba(165,211,108,.14); color: var(--acacia); }
+.cab { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.cab .rosto { width: 40px; height: 40px; font-size: 14px; }
+.tag { display: inline-block; font-size: 11.5px; border: 1px solid var(--linha); border-radius: 99px; padding: 0 8px; color: var(--mudo); }
+.trilha { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 13px; background: var(--alto); border-radius: 12px; padding: 8px 10px; }
+.trilha .niv { font-size: 10.5px; color: var(--apagado); text-transform: uppercase; display: block; }
+.trilha .seta { color: var(--apagado); }
+.trilha .aqui { color: var(--ambar); font-weight: 700; }
+.barras { display: grid; gap: 5px; }
+.barra { display: grid; grid-template-columns: 118px minmax(0, 1fr) 48px; gap: 8px; align-items: center; font-size: 12.5px; }
+.barra .trilho { height: 8px; border-radius: 4px; background: var(--linha); position: relative; }
+.barra .trilho i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--mudo); }
+.barra .trilho i.passou { background: var(--ambar); }
+.barra .trilho i.muito { background: var(--perigo); }
+.barra .trilho u { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); opacity: .6; }
+.barra span:last-child { text-align: right; font-variant-numeric: tabular-nums; color: var(--mudo); }
+.fio { list-style: none; margin: 0; padding: 0 0 0 4px; display: grid; gap: 0; }
+.fio li { position: relative; padding: 0 0 10px 20px; font-size: 13px; }
+.fio li::before { content: ""; position: absolute; left: 4px; top: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--apagado); }
+.fio li::after { content: ""; position: absolute; left: 7.5px; top: 15px; bottom: 0; width: 1px; background: var(--linha); }
+.fio li:last-child::after { display: none; }
+.fio li.forte::before { background: var(--perigo); }
+.fio li.ok::before { background: var(--acacia); }
+.leitura { background: var(--alto); border-left: 3px solid var(--ambar); border-radius: 10px; padding: 9px 11px; font-size: 13px; }
+.leitura.processo { border-left-color: var(--perigo); }
+textarea { width: 100%; min-height: 78px; resize: vertical; font: inherit; font-size: 13.5px; color: var(--ink); background: var(--chao); border: 1px solid var(--linha); border-radius: 10px; padding: 8px 10px; }
+.botoes { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--linha); background: var(--alto); border-radius: 11px; padding: 6px 11px; font-size: 13px; }
+.btn:hover { border-color: var(--apagado); }
+.btn.forte { background: var(--ambar); border-color: var(--ambar); color: var(--sobre-cor); font-weight: 700; }
+.voltar { border: 0; background: none; color: var(--mudo); padding: 0; font-size: 12.5px; text-align: left; }
+
+.rodape { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; background: var(--raia); border-radius: 16px; padding: 8px 14px; font-size: 12.5px; color: var(--mudo); }
+.rodape input[type=range] { width: 100%; accent-color: var(--ambar); }
+.rodape b { font: 650 13px "Bricolage Grotesque"; color: var(--ink); }
+#toast { position: fixed; right: 16px; bottom: 70px; background: var(--ink); color: var(--chao); padding: 10px 14px; border-radius: 12px; font-size: 13px; box-shadow: var(--sombra); display: none; max-width: 380px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+@media (max-width: 1000px) { .corpo { grid-template-columns: 1fr; } .tela { height: auto; } .ceu { height: 70vh; } }
+.telas { display: flex; gap: 4px; margin-left: 14px; } .telas a { font-size: 12.5px; color: var(--mudo); padding: 4px 10px; border-radius: 99px; border: 1px solid transparent; text-decoration: none; } .telas a:hover { border-color: var(--linha); } .telas a[aria-current] { color: var(--ink); border-color: var(--linha); background: var(--alto); }
+</style>
+</head>
+<body>
+<div class="tela">
+  <header class="topo">
+    <div class="marca">
+      <svg aria-hidden="true" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#d9a13b"/><path d="M18 64V41q0-8 8-9h4v32z" fill="#fff1d2"/><circle cx="22" cy="45" r="2.3" fill="#b06f1c"/><circle cx="26.5" cy="52" r="1.9" fill="#b06f1c"/><path d="M7 64l11-14 4 14z" fill="#3a2812"/><path d="M41 64L30 50l-4 14z" fill="#3a2812"/><path d="M23 34c0-7 5-11 12-11h7c6 0 10 3 10 7s-4 7-10 7H30c-4 0-7-1-7-3z" fill="#fff1d2"/><circle cx="49" cy="29.5" r="1" fill="#3a2812"/><circle cx="38" cy="29" r="2.1" fill="#3a2812"/><path d="M31 13.5V9M37 13.5V9" stroke="#fff1d2" stroke-width="2" stroke-linecap="round"/><circle cx="31" cy="8.5" r="1.8" fill="#3a2812"/><circle cx="37" cy="8.5" r="1.8" fill="#3a2812"/><path d="M28 23v-7q0-3 3-3h6q3 0 3 3v7z" fill="#3a2812"/><rect x="28" y="19.2" width="12" height="2.4" fill="#d9a13b"/><ellipse cx="34" cy="23.2" rx="12.5" ry="2.3" fill="#3a2812"/></svg>
+      <div><h1>Inspetor <span>Jirafalis</span></h1><small>Mapa de atuação · observação geral</small></div>
+    </div>
+    <nav class="telas" aria-label="Telas do protótipo"><a href="mesa.html">Mesa do dia</a><a href="escala.html" aria-current="page">Investigar</a><a href="regras.html">Regras e cérebro</a><a href="onboarding.html">Onboarding</a><a href="../index.html">Apresentação</a><span style="color:var(--apagado);margin:0 4px">›</span><a href="escala.html" style="font-size:12px">Visão geral</a><a href="constelacao.html" aria-current="page" style="font-size:12px">Time</a></nav>
+    <div class="filtros" id="filtros" aria-label="Filtros"></div>
+  </header>
+
+  <main class="corpo">
+    <section class="ceu" id="ceu" aria-label="Mapa de atuação dos times">
+      <svg id="mapa" viewBox="0 0 1200 640" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="mapa-titulo">
+        <title id="mapa-titulo">Rotas dos times pelas etapas do processo. Pontos mais brilhantes pedem atenção.</title>
+      </svg>
+      <div class="dica" id="dica" role="tooltip"></div>
+      <div class="legenda" aria-hidden="true">
+        <span><i style="width:7px;height:7px;background:#d9cdb8;opacity:.55"></i>andando bem</span>
+        <span><i style="width:10px;height:10px;background:var(--ambar)"></i>passou da referência</span>
+        <span><i style="width:12px;height:12px;background:#ffd6a0;box-shadow:0 0 0 4px rgba(242,163,138,.35)"></i>pede uma pergunta</span>
+        <span>── rota percorrida · ┄ itens anteriores</span>
+      </div>
+    </section>
+    <aside class="lado" id="lado" aria-live="polite"></aside>
+  </main>
+
+  <footer class="rodape">
+    <span>Linha do tempo</span>
+    <input type="range" id="tempo" min="0" max="10" step="1" value="10" aria-label="Dia útil exibido">
+    <span id="tempo-txt"><b>Hoje</b></span>
+  </footer>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+// ---------- Atmosfera do processo (viria do onboarding, D1). Nomes genéricos. ----------
+const ETAPAS = ["A fazer", "Em desenvolvimento", "Em revisão (PR)", "Em testes", "Em validação", "Pronto"];
+const REFERENCIA = [3, 4, 2, 2, 2, 0];   // dias úteis esperados em cada etapa
+const TIMES = [
+  { id: "pag", nome: "Time Pagamentos", origem: "tag mapeada do Jira" },
+  { id: "onb", nome: "Time Onboarding", origem: "tag criada no Jirafalis" },
+  { id: "pla", nome: "Time Plataforma", origem: "tag mapeada do Jira" },
+];
+const CORES = ["#e8b456", "#6cc4b2", "#8fb6dc", "#a5d36c", "#f2a38a", "#d9a13b", "#c9b6e8", "#e8d48f", "#9fd6c6"];
+
+// ---------- Dados fictícios: dia 0 = há 10 dias úteis, dia 10 = hoje ----------
+const PESSOAS = [
+  { nome: "Ana Lima", time: "pag", anteriores: [[0, 1], [2, 2], [3, 5]],
+    item: { epico: "Cobrança recorrente", historia: "Retentar cartão recusado", task: "#412 Fila de retentativa" },
+    eventos: [[3, 1], [5, 2], [7, 3], [9, 4]], evid: [[5, "PR #71 aberto"], [7, "PR #71 mergeado"], [9, "Deploy em homologação"]] },
+  { nome: "André Souza", time: "pag", anteriores: [],
+    item: { epico: "Cobrança recorrente", historia: "Estorno pelo painel", task: "#398 Criação de endpoint de estorno" },
+    eventos: [[0, 1]], evid: [[3, "PR #77 aberto"], [6, "PR #77 mergeado (aprovado por Ana)"], [7, "Deploy em homologação"]],
+    divergeDesde: 6 },
+  { nome: "Bruno Reis", time: "pag", anteriores: [[0, 1], [3, 5]],
+    item: { epico: "Cobrança recorrente", historia: "Recibo por e-mail", task: "#405 Template do recibo" },
+    eventos: [[4, 1], [7, 2]], evid: [[7, "PR #80 aberto, aguardando revisão"]] },
+  { nome: "Carla Mendes", time: "onb", anteriores: [[0, 1], [2, 2], [4, 3], [6, 5]],
+    item: { epico: "Cadastro em 3 passos", historia: "Validar documento", task: "#233 Leitura do CPF" },
+    eventos: [[8, 1]], evid: [[9, "3 commits na branch feature/233"]] },
+  { nome: "Diego Prado", time: "onb", anteriores: [],
+    item: { epico: "Cadastro em 3 passos", historia: "Selfie com documento", task: "#240 Captura da selfie" },
+    eventos: [[0, 1], [3, 2], [5, 3]], evid: [[3, "PR #44 aberto"], [5, "PR #44 mergeado"], [5, "Item em testes sem responsável de QA"]],
+    filaSemDono: true },
+  { nome: "Elisa Rocha", time: "onb", anteriores: [[0, 1], [3, 5]],
+    item: { epico: "Cadastro em 3 passos", historia: "Boas-vindas", task: "#251 E-mail de boas-vindas" },
+    eventos: [[4, 1], [6, 2], [7, 3], [8, 4], [9, 5]], evid: [[9, "Publicado em produção"]] },
+  { nome: "Fábio Nunes", time: "pla", anteriores: [[0, 1], [4, 2], [5, 3], [7, 5]],
+    item: { epico: "Observabilidade", historia: "Alertas de latência", task: "#88 Painel de latência" },
+    eventos: [[9, 1]], evid: [[10, "1 commit na branch feature/88"]] },
+  { nome: "Gabriela Dias", time: "pla", anteriores: [],
+    item: { epico: "Observabilidade", historia: "Logs estruturados", task: "#91 Padrão de log" },
+    eventos: [[0, 1], [3, 2], [4, 3], [6, 4]], evid: [[4, "PR #12 mergeado"], [6, "Pedido de validação ao time de produto"]] },
+  { nome: "Heitor Alves", time: "pla", anteriores: [],
+    item: { epico: "Observabilidade", historia: "Métricas de fila", task: "#85 Contador de mensagens" },
+    eventos: [[0, 1], [3, 2], [5, 3], [7, 5]], evid: [[7, "Publicado em produção"]], semItemDepois: true },
+];
+PESSOAS.forEach((p, i) => { p.id = "p" + i; p.cor = CORES[i % CORES.length]; p.iniciais = p.nome.split(" ").map(s => s[0]).join("").slice(0, 2); });
+
+// ---------- Estado ----------
+let hoje = 10, selecionado = null, filtroTime = "todos", soAtencao = false, sobrio = false;
+const $ = s => document.querySelector(s);
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, pai) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (pai) pai.appendChild(e); return e; };
+const dias = n => n === 1 ? "1 dia útil" : n + " dias úteis";
+
+// Onde a pessoa está no dia t, quanto tempo e qual o sinal
+function situacao(p, t) {
+  const ev = p.eventos.filter(e => e[0] <= t);
+  if (!ev.length) return null;
+  const [entrou, etapa] = ev[ev.length - 1];
+  const nDias = t - entrou;
+  const evid = p.evid.filter(e => e[0] <= t);
+  let sinal = "saudavel", porque = `${ETAPAS[etapa]} · ${dias(nDias)}`, leitura = null, pergunta = null, tipo = null;
+  const ref = REFERENCIA[etapa];
+  if (etapa === 5 && p.semItemDepois && nDias >= 2) {
+    sinal = "atencao"; porque = `Sem item novo há ${dias(nDias)}`; tipo = "pessoa";
+    leitura = "Pode ser trabalho fora do quadro (suporte, estudo, reunião) ou falta de item pronto para puxar.";
+    pergunta = `${p.nome.split(" ")[0]}, vi que você terminou o ${p.item.task.split(" ")[0]} e está sem item novo há ${dias(nDias)}. Está em algo que não aparece no quadro?`;
+  } else if (p.divergeDesde !== undefined && t >= p.divergeDesde && etapa < 2) {
+    sinal = "critico"; tipo = "processo";
+    porque = `${ETAPAS[etapa]} há ${dias(nDias)}, mas o PR já foi mergeado`;
+    leitura = "Provável falha do processo, não da pessoa: o trabalho andou (PR mergeado e deploy), o card não. O card deveria estar em Em testes.";
+    pergunta = `${p.nome.split(" ")[0]}, vi aqui que você está há ${dias(nDias)} em "${p.item.task.replace(/^#\d+ /, "")}". Isso está correto? Vi também que o PR #77 já foi mergeado.`;
+  } else if (p.filaSemDono && etapa === 3 && nDias > ref) {
+    sinal = nDias >= ref * 2.5 ? "critico" : "atencao"; tipo = "processo";
+    porque = `${ETAPAS[etapa]} há ${dias(nDias)}, sem responsável de testes`;
+    leitura = "Provável fila sem dono: o desenvolvimento terminou e ninguém pegou o teste.";
+    pergunta = `${p.nome.split(" ")[0]}, o ${p.item.task.split(" ")[0]} está em testes há ${dias(nDias)}. Alguém está testando ou ele ficou na fila?`;
+  } else if (ref > 0 && nDias >= ref * 1.25) {
+    sinal = nDias >= ref * 2.5 ? "critico" : "atencao"; tipo = "pessoa";
+    porque = `${ETAPAS[etapa]} há ${dias(nDias)} (referência: ${ref})`;
+    leitura = "Passou da referência da etapa. Pode ser um item maior que o normal, um bloqueio ou espera por outra pessoa.";
+    pergunta = `${p.nome.split(" ")[0]}, o ${p.item.task.split(" ")[0]} está na etapa \"${ETAPAS[etapa]}\" há ${dias(nDias)}. Tem algo travando ou alguém que precisa ajudar?`;
+  }
+  // tempo gasto em cada etapa até t
+  const tempos = ev.map((e, i) => ({ etapa: e[1], dias: (i + 1 < ev.length ? ev[i + 1][0] : t) - e[0] }));
+  return { etapa, nDias, sinal, porque, leitura, pergunta, tipo, evid, tempos, eventos: ev };
+}
+
+// ---------- Desenho ----------
+const X = i => 150 + i * 190, BANDA = 190, Y0 = 85;
+const yTime = ti => Y0 + ti * BANDA + 70;
+
+function desenhar() {
+  const svg = $("#mapa");
+  [...svg.querySelectorAll("g")].forEach(g => g.remove());
+  // poeira de estrelas (decorativa, sem significado; some no modo sóbrio)
+  const poeira = el("g", { class: "poeira", "aria-hidden": "true" }, svg);
+  let s = 7; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < 140; i++) el("circle", { cx: rnd() * 1200, cy: rnd() * 640, r: rnd() * .9 + .2, fill: "#f3e9da", "fill-opacity": (rnd() * .18 + .04).toFixed(2) }, poeira);
+
+  const g = el("g", {}, svg);
+  ETAPAS.forEach((n, i) => { const t = el("text", { x: X(i), y: 38, class: "etapa-nome" }, g); t.textContent = n; });
+  el("line", { x1: 60, x2: 1150, y1: 52, y2: 52, stroke: "#3a2e21" }, g);
+
+  TIMES.forEach((tm, ti) => {
+    const gt = el("g", { "data-time": tm.id }, g);
+    if (filtroTime !== "todos" && filtroTime !== tm.id) gt.classList.add("esmaecido");
+    const cy = yTime(ti);
+    const nome = el("text", { x: 20, y: cy - 52, class: "time-nome" }, gt); nome.textContent = tm.nome;
+    const sub = el("text", { x: 20, y: cy - 38, class: "time-sub" }, gt); sub.textContent = tm.origem;
+    // as etapas do processo declarado são as estrelas fixas do céu de cada time
+    ETAPAS.forEach((_, i) => {
+      el("line", { x1: X(i), x2: X(i), y1: cy - 62, y2: cy + 62, class: "rota", "stroke-dasharray": "1 6" }, gt);
+      el("path", { d: estrela(X(i), cy - 66, 3.5), class: "estrela-fixa" }, gt);
+    });
+
+    const doTime = PESSOAS.filter(p => p.time === tm.id).map(p => ({ p, sit: situacao(p, hoje) })).filter(o => o.sit);
+    // cada pessoa tem a sua rota (faixa) dentro do céu do time; a posição na horizontal é a etapa
+    doTime.forEach((o, k) => { o.y = cy - 40 + k * 40; o.x = X(o.sit.etapa); });
+
+    // rastros: itens anteriores (pontilhado, logo abaixo) e o item atual (linha que liga as estrelas visitadas)
+    doTime.forEach(({ p, sit, x, y }) => {
+      const velhos = p.anteriores.filter(a => a[0] <= hoje);
+      if (velhos.length > 1) el("path", { d: velhos.map((a, i) => `${i ? "L" : "M"}${X(a[1])},${y + 9}`).join(" "), class: "rastro-velho" }, gt);
+      const pts = sit.eventos.map(e => [X(e[1]), y]);
+      if (pts.length > 1) el("path", { d: pts.map((q, i) => `${i ? "L" : "M"}${q[0]},${q[1]}`).join(" "), class: "rastro" + (selecionado === p.id ? " sel" : "") }, gt);
+      pts.slice(0, -1).forEach(q => el("path", { d: estrela(q[0], q[1], 3.2), fill: selecionado === p.id ? "var(--ambar)" : "var(--mudo)", "fill-opacity": .8 }, gt));
+      // declarado × real: o fio liga onde o card diz que está a onde o git diz que o trabalho está
+      if (p.divergeDesde !== undefined && sit.tipo === "processo") {
+        const xr = X(3);
+        el("path", { d: `M${x + 58},${y} L${xr - 9},${y}`, stroke: "var(--perigo)", "stroke-width": 1.3, "stroke-dasharray": "5 4", fill: "none" }, gt);
+        el("circle", { cx: xr, cy: y, r: 7, fill: "none", stroke: "var(--perigo)", "stroke-width": 1.5, "stroke-dasharray": "3 2" }, gt);
+        const t = el("text", { x: xr + 13, y: y + 4, class: "time-sub", fill: "var(--perigo)" }, gt); t.textContent = "real: PR mergeado + deploy";
+        t.style.fill = "var(--perigo)";
+      }
+    });
+
+    // pessoas: brilho e tamanho só para o que pede atenção
+    doTime.forEach(({ p, sit, x, y }) => {
+      const r = { saudavel: 4, atencao: 6.5, critico: 8 }[sit.sinal];
+      const gp = el("g", { class: `pessoa ${sit.sinal}${selecionado === p.id ? " sel" : ""}`, tabindex: 0, role: "button", "data-id": p.id,
+        "aria-label": `${p.nome}, ${tm.nome}: ${sit.porque}` }, gt);
+      if (soAtencao && sit.sinal === "saudavel") gp.classList.add("esmaecido");
+      el("circle", { cx: x, cy: y, r: r * 2.6, class: "halo" }, gp);
+      el("circle", { cx: x, cy: y, r, class: "nucleo" }, gp);
+      el("circle", { cx: x, cy: y, r: r + 5, class: "anel", fill: "none" }, gp);
+      el("circle", { cx: x, cy: y, r: 18, fill: "transparent" }, gp); // área de toque
+      const t = el("text", { x: x + r + 7, y: y + 4, class: "rotulo" }, gp); t.textContent = p.nome.split(" ")[0];
+      gp.addEventListener("mouseenter", ev => dica(p, sit, ev));
+      gp.addEventListener("mousemove", ev => moverDica(ev));
+      gp.addEventListener("mouseleave", () => $("#dica").classList.remove("on"));
+      gp.addEventListener("click", () => selecionar(p.id));
+      gp.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); selecionar(p.id); } });
+    });
+  });
+  $("#ceu").classList.toggle("sobrio", sobrio);
+}
+function estrela(x, y, r) { const k = r * .32; return `M${x},${y - r} L${x + k},${y - k} L${x + r},${y} L${x + k},${y + k} L${x},${y + r} L${x - k},${y + k} L${x - r},${y} L${x - k},${y - k} Z`; }
+
+function rosto(p, cls = "rosto") { return `<span class="${cls}" style="background:${p.cor}" aria-hidden="true">${p.iniciais}</span>`; }
+function dica(p, sit, ev) {
+  const d = $("#dica");
+  d.innerHTML = `${rosto(p)}<div><b>${p.nome}</b>${sit.porque}</div>`;
+  d.classList.add("on"); moverDica(ev);
+}
+function moverDica(ev) {
+  const caixa = $("#ceu").getBoundingClientRect(), d = $("#dica");
+  let x = ev.clientX - caixa.left + 14, y = ev.clientY - caixa.top + 14;
+  if (x + 290 > caixa.width) x -= 310;
+  d.style.left = x + "px"; d.style.top = y + "px";
+}
+
+// ---------- Lateral ----------
+const NOME_SINAL = { critico: "pede uma pergunta", atencao: "passou da referência", saudavel: "andando bem" };
+function lateral() {
+  const lado = $("#lado");
+  if (!selecionado) {
+    const lista = PESSOAS.map(p => ({ p, sit: situacao(p, hoje) })).filter(o => o.sit && o.sit.sinal !== "saudavel")
+      .filter(o => filtroTime === "todos" || o.p.time === filtroTime)
+      .sort((a, b) => (b.sit.sinal === "critico") - (a.sit.sinal === "critico") || b.sit.nDias - a.sit.nDias);
+    const total = PESSOAS.filter(p => situacao(p, hoje) && (filtroTime === "todos" || p.time === filtroTime)).length;
+    lado.innerHTML = `<div><h2>O que pede atenção</h2><p class="mudo" style="margin:4px 0 0">${lista.length} de ${total} pessoas. As outras estão andando dentro da referência.</p></div>
+      <div class="fila">${lista.map(({ p, sit }) => `<button data-id="${p.id}">${rosto(p)}<span><b>${p.nome}</b><small>${sit.porque}</small></span><span class="sinal ${sit.sinal}">${NOME_SINAL[sit.sinal]}</span></button>`).join("") || '<p class="mudo">Nada fora da referência neste dia.</p>'}</div>
+      <p class="mudo" style="font-size:12.5px;margin:0">O mapa não faz ranking. A posição mostra em que etapa está o item de cada pessoa, e o brilho mostra só o que passou da referência.</p>`;
+    lado.querySelectorAll("button[data-id]").forEach(b => b.onclick = () => selecionar(b.dataset.id));
+    return;
+  }
+  const p = PESSOAS.find(x => x.id === selecionado), sit = situacao(p, hoje), tm = TIMES.find(t => t.id === p.time);
+  const maxD = Math.max(...sit.tempos.map(t => Math.max(t.dias, REFERENCIA[t.etapa])), 1);
+  lado.innerHTML = `<button class="voltar" id="voltar">← Voltar ao que pede atenção</button>
+    <div class="cab">${rosto(p)}<div><h2>${p.nome}</h2><span class="tag">${tm.nome}</span></div><span class="sinal ${sit.sinal}">${NOME_SINAL[sit.sinal]}</span></div>
+    <div><h3>Onde está</h3><div class="trilha">
+      <span><span class="niv">Épico</span>${p.item.epico}</span><span class="seta">›</span>
+      <span><span class="niv">História</span>${p.item.historia}</span><span class="seta">›</span>
+      <span class="aqui"><span class="niv">Task</span>${p.item.task}</span></div>
+      <p style="margin:6px 0 0">${sit.porque}</p></div>
+    <div><h3>Tempo em cada etapa</h3><div class="barras">${sit.tempos.map(t => {
+      const ref = REFERENCIA[t.etapa], cls = ref && t.dias >= ref * 2.5 ? "muito" : ref && t.dias >= ref * 1.25 ? "passou" : "";
+      return `<div class="barra"><span>${ETAPAS[t.etapa]}</span><span class="trilho"><i class="${cls}" style="width:${t.dias / maxD * 100}%"></i>${ref ? `<u style="left:${ref / maxD * 100}%" title="referência"></u>` : ""}</span><span>${t.dias} d</span></div>`; }).join("")}</div>
+      <p class="mudo" style="font-size:12px;margin:4px 0 0">O traço vertical é a referência da etapa, configurada pelo cliente.</p></div>
+    <div><h3>O fio da investigação</h3><ul class="fio">
+      ${sit.eventos.map(e => `<li>Dia ${e[0]}: card foi para <b>${ETAPAS[e[1]]}</b></li>`).join("")}
+      ${sit.evid.map(e => `<li class="${/mergeado|Publicado|Deploy/.test(e[1]) ? (sit.tipo === "processo" ? "forte" : "ok") : ""}">Dia ${e[0]}: ${e[1]}</li>`).join("")}
+      <li>Hoje: card em <b>${ETAPAS[sit.etapa]}</b></li></ul></div>
+    ${sit.leitura ? `<div class="leitura ${sit.tipo === "processo" ? "processo" : ""}"><b>${sit.tipo === "processo" ? "Leitura do Jirafalis: o processo" : "Leitura do Jirafalis"}</b><br>${sit.leitura}</div>
+    <div><h3>Pergunta sugerida para o gestor</h3><textarea id="pergunta">${sit.pergunta}</textarea>
+      <div class="botoes" style="margin-top:6px"><button class="btn forte" data-acao="enviar">Enviar no Teams/Slack</button><button class="btn" data-acao="copiar">Copiar</button></div></div>
+    <div><h3>Registrar a resposta</h3><div class="botoes">
+      <button class="btn" data-acao="processo">O processo falhou</button><button class="btn" data-acao="correto">Está correto</button><button class="btn" data-acao="ajuda">Precisa de ajuda</button></div></div>`
+    : `<div class="leitura" style="border-left-color:var(--acacia)">Andando dentro da referência. Nenhuma pergunta necessária.</div>`}`;
+  $("#voltar").onclick = () => selecionar(null);
+  lado.querySelectorAll("[data-acao]").forEach(b => b.onclick = () => acao(b.dataset.acao, p));
+}
+function acao(a, p) {
+  const msg = {
+    enviar: "Protótipo: no nível júnior a mensagem vai como rascunho e espera o Liberar do gestor.",
+    copiar: "Pergunta copiada.",
+    processo: `Resposta registrada: o processo falhou. Vira regra candidata (D1): "PR mergeado com card em desenvolvimento → mover para Em testes", que nasce no nível júnior.`,
+    correto: "Resposta registrada: a situação está correta. A referência dessa etapa pode ser ajustada para itens desse tamanho.",
+    ajuda: `Resposta registrada: ${p.nome.split(" ")[0]} precisa de ajuda. O sinal continua aceso até o item andar.`,
+  }[a];
+  if (a === "copiar") navigator.clipboard?.writeText($("#pergunta").value);
+  const t = $("#toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = "none", 5200);
+}
+function selecionar(id) { selecionado = id; $("#dica").classList.remove("on"); desenhar(); lateral(); }
+
+// ---------- Filtros e linha do tempo ----------
+function filtros() {
+  const f = $("#filtros");
+  f.innerHTML = [["todos", "Todos os times"], ...TIMES.map(t => [t.id, t.nome])].map(([id, n]) => `<button class="pilula" data-time="${id}" aria-pressed="${filtroTime === id}">${n}</button>`).join("")
+    + `<span class="sep"></span><button class="pilula" id="so-atencao" aria-pressed="${soAtencao}">Só o que pede atenção</button><button class="pilula" id="sobrio" aria-pressed="${sobrio}">Modo sóbrio</button>`;
+  f.querySelectorAll("[data-time]").forEach(b => b.onclick = () => { filtroTime = b.dataset.time; tudo(); });
+  $("#so-atencao").onclick = () => { soAtencao = !soAtencao; tudo(); };
+  $("#sobrio").onclick = () => { sobrio = !sobrio; tudo(); };
+}
+$("#tempo").addEventListener("input", e => {
+  hoje = +e.target.value;
+  $("#tempo-txt").innerHTML = hoje === 10 ? "<b>Hoje</b>" : `<b>há ${dias(10 - hoje)}</b>`;
+  if (selecionado && !situacao(PESSOAS.find(p => p.id === selecionado), hoje)) selecionado = null;
+  desenhar(); lateral();
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && selecionado) selecionar(null); });
+function tudo() { filtros(); desenhar(); lateral(); }
+const ancora = location.hash.slice(1); if (PESSOAS.some(p => p.id === ancora)) selecionado = ancora; // ex.: #p1 abre o André
+tudo();
+</script>
+</body>
+</html>

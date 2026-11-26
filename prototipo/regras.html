@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jirafalis · Regras e cérebro</title>
+<!-- Inspetor Jirafalis · protótipo de interface. Dados fictícios. © Sidney de Araújo Silva. -->
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap");
+:root { --chao: #17120c; --raia: #211a12; --alto: #2c2319; --linha: #3a2e21; --ink: #f3e9da; --mudo: #b2a28b; --apagado: #7a6c5a;
+  --ambar: #e8b456; --acacia: #a5d36c; --perigo: #f2a38a; --fio: #e06c4f; --ceu-azul: #8fb6dc; --sobre-cor: #241805; --sombra: 0 18px 48px rgba(0,0,0,.45); color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--chao); color: var(--ink); font: 14px/1.45 "Atkinson Hyperlegible", "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--ambar); outline-offset: 2px; }
+.tela { height: 100vh; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 10px; padding: 10px 12px; }
+.topo { display: flex; gap: 14px; align-items: center; padding: 6px 14px 6px 6px; border-radius: 20px; background: var(--raia); min-height: 58px; }
+.marca { display: flex; gap: 10px; align-items: center; }
+.marca svg { width: 40px; height: 40px; }
+.marca h1 { font: 700 19px/1 "Bricolage Grotesque", sans-serif; margin: 0; letter-spacing: -.02em; } .marca h1 span { color: var(--ambar); }
+.marca small { color: var(--mudo); font-size: 12.5px; }
+.telas { display: flex; gap: 4px; margin-left: 14px; flex-wrap: wrap; } .telas a { font-size: 12.5px; color: var(--mudo); padding: 4px 10px; border-radius: 99px; border: 1px solid transparent; text-decoration: none; } .telas a:hover { border-color: var(--linha); } .telas a[aria-current] { color: var(--ink); border-color: var(--linha); background: var(--alto); }
+.estado-topo { margin-left: auto; display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--mudo); white-space: nowrap; }
+.ponto-vivo { width: 8px; height: 8px; border-radius: 50%; background: var(--acacia); display: inline-block; }
+.ponto-vivo.pausa { background: var(--perigo); }
+/* tarja vermelha: só existe quando há erro com efeito */
+.tarja { display: none; grid-template-columns: 6px minmax(0, 1fr) auto; gap: 12px; align-items: center; background: rgba(242,163,138,.1); border: 1px solid rgba(242,163,138,.55); border-radius: 14px; padding: 9px 14px 9px 0; }
+.tarja.on { display: grid; } .tarja::before { content: ""; align-self: stretch; background: var(--perigo); border-radius: 14px 0 0 14px; }
+.tarja b { color: var(--perigo); font: 700 14px "Bricolage Grotesque"; } .tarja small { display: block; color: var(--mudo); font-size: 12.5px; }
+.abas { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.aba { border: 1px solid var(--linha); background: var(--raia); border-radius: 12px; padding: 7px 13px; font-size: 13.5px; display: inline-flex; gap: 7px; align-items: center; }
+.aba[aria-selected=true] { border-color: var(--ambar); color: var(--ambar); font-weight: 700; background: rgba(232,180,86,.07); }
+.aba .n { font-size: 11px; background: var(--alto); color: var(--mudo); border-radius: 99px; padding: 0 7px; font-weight: 700; }
+.aba[aria-selected=true] .n { background: var(--ambar); color: var(--sobre-cor); }
+.legenda-niveis { margin-left: auto; display: flex; gap: 6px; font-size: 12px; color: var(--mudo); align-items: center; }
+.corpo { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 10px; }
+.painel { background: var(--raia); border-radius: 20px; overflow: auto; padding: 16px; scrollbar-width: thin; scrollbar-color: var(--linha) transparent; min-height: 0; }
+.painel h2 { font: 700 17px "Bricolage Grotesque"; margin: 0 0 4px; display: flex; gap: 8px; align-items: center; }
+.painel h3 { font: 650 12px "Bricolage Grotesque"; color: var(--mudo); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: .05em; display: flex; gap: 8px; align-items: center; }
+.painel h3:first-child { margin-top: 0; }
+p.sub { margin: 0 0 10px; color: var(--mudo); font-size: 13px; }
+.mudo { color: var(--mudo); } .apagado { color: var(--apagado); }
+.cartao { background: var(--alto); border: 1px solid var(--linha); border-radius: 14px; padding: 11px 13px; margin-bottom: 8px; display: grid; gap: 6px; }
+.cartao.clicavel { cursor: pointer; text-align: left; width: 100%; } .cartao.clicavel:hover { border-color: var(--apagado); }
+.cartao.sel { border-color: var(--ambar); }
+.cartao .linha1 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cartao .linha1 b { font: 650 14px "Bricolage Grotesque"; }
+.cartao small { color: var(--mudo); font-size: 12.5px; }
+.de-para { display: flex; gap: 8px; align-items: center; font-size: 13px; flex-wrap: wrap; }
+.de-para .de { color: var(--mudo); text-decoration: line-through; text-decoration-color: var(--apagado); }
+.de-para .para { color: var(--ambar); font-weight: 700; }
+.evid { font-size: 12.5px; color: var(--mudo); border-left: 2px solid var(--linha); padding-left: 8px; }
+.tag { font-size: 11px; color: var(--mudo); border: 1px solid var(--linha); border-radius: 99px; padding: 0 7px; white-space: nowrap; }
+.nivel { font-size: 10.5px; font-weight: 700; padding: 1px 8px; border-radius: 99px; white-space: nowrap; letter-spacing: .02em; }
+.nivel.junior { background: rgba(143,182,220,.16); color: var(--ceu-azul); }
+.nivel.pleno { background: rgba(232,180,86,.2); color: var(--ambar); }
+.nivel.senior { background: rgba(165,211,108,.16); color: var(--acacia); }
+.nivel.sim { background: transparent; border: 1px dashed var(--apagado); color: var(--mudo); }
+.risco { font-size: 10.5px; font-weight: 700; color: var(--mudo); border: 1px solid var(--linha); border-radius: 6px; padding: 0 5px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--linha); background: var(--alto); border-radius: 11px; padding: 6px 11px; font-size: 13px; }
+.btn:hover { border-color: var(--apagado); }
+.btn.forte { background: var(--ambar); border-color: var(--ambar); color: var(--sobre-cor); font-weight: 700; }
+.btn.bom { border-color: rgba(165,211,108,.5); color: var(--acacia); }
+.btn.mau { border-color: rgba(242,163,138,.5); color: var(--perigo); }
+.btn.peq { padding: 3px 9px; font-size: 12px; border-radius: 9px; }
+.btn[disabled] { opacity: .45; cursor: default; }
+.botoes { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { font-size: 12px; border: 1px solid var(--linha); background: transparent; border-radius: 99px; padding: 2px 10px; color: var(--mudo); }
+.chip:hover, .chip[aria-pressed=true] { border-color: var(--perigo); color: var(--perigo); }
+.feito { font-size: 12.5px; font-weight: 700; }
+.feito.ok { color: var(--acacia); } .feito.nao { color: var(--perigo); }
+textarea, input[type=text], input[type=number], select { width: 100%; font-size: 13.5px; background: var(--chao); border: 1px solid var(--linha); border-radius: 10px; padding: 7px 10px; }
+textarea { min-height: 70px; resize: vertical; }
+.grade2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kv { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 4px 10px; font-size: 13px; }
+.kv dt { color: var(--mudo); } .kv dd { margin: 0; }
+.travas { display: grid; gap: 5px; font-size: 12.5px; }
+.travas div { display: flex; gap: 8px; align-items: baseline; } .travas div::before { content: "✓"; color: var(--acacia); font-weight: 700; }
+/* barra de confiança: limite inferior de Wilson × limiar da classe */
+.conf { display: grid; grid-template-columns: minmax(0, 1fr) 42px; gap: 8px; align-items: center; font-size: 12px; }
+.conf .trilho { height: 8px; border-radius: 4px; background: var(--linha); position: relative; }
+.conf .trilho i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--ceu-azul); }
+.conf .trilho i.passou { background: var(--acacia); }
+.conf .trilho u { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); opacity: .7; }
+.conf span { text-align: right; font-variant-numeric: tabular-nums; color: var(--mudo); }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th { text-align: left; color: var(--mudo); font-weight: 400; font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; padding: 4px 6px; border-bottom: 1px solid var(--linha); }
+td { padding: 7px 6px; border-bottom: 1px solid rgba(58,46,33,.6); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+.num { font-variant-numeric: tabular-nums; text-align: right; }
+.dsl { font: 12.5px/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--chao); border: 1px solid var(--linha); border-radius: 12px; padding: 10px 12px; white-space: pre; overflow: auto; color: #e9dcc6; }
+.dsl .k { color: var(--ambar); } .dsl .s { color: var(--acacia); } .dsl .c { color: var(--apagado); }
+.portugues { background: var(--alto); border-left: 3px solid var(--ambar); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+.padroes { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
+.padrao-btn { text-align: left; border: 1px solid var(--linha); background: var(--alto); border-radius: 12px; padding: 8px 10px; display: grid; gap: 2px; }
+.padrao-btn b { font: 650 13px "Bricolage Grotesque"; } .padrao-btn small { color: var(--mudo); font-size: 11.5px; }
+.padrao-btn[aria-pressed=true] { border-color: var(--ambar); background: rgba(232,180,86,.07); }
+.padrao-btn .cod { font-size: 10.5px; color: var(--ambar); font-weight: 700; }
+.passos-nr { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.passos-nr span { font-size: 12px; color: var(--apagado); } .passos-nr span.on { color: var(--ambar); font-weight: 700; }
+.modo { display: inline-flex; border: 1px solid var(--linha); border-radius: 12px; overflow: hidden; }
+.modo button { border: 0; background: transparent; padding: 7px 13px; font-size: 13px; color: var(--mudo); }
+.modo button[aria-pressed=true] { background: var(--ambar); color: var(--sobre-cor); font-weight: 700; }
+/* conversa com a IA */
+.chat { display: grid; gap: 8px; }
+.msg { max-width: 88%; border-radius: 14px; padding: 9px 12px; font-size: 13.5px; }
+.msg.eu { justify-self: end; background: #3a2e21; border-bottom-right-radius: 4px; }
+.msg.ia { justify-self: start; background: var(--alto); border: 1px solid var(--linha); border-bottom-left-radius: 4px; }
+.msg .quem { display: block; font-size: 11px; color: var(--apagado); margin-bottom: 2px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.ferr { justify-self: start; font: 12px ui-monospace, Consolas, monospace; color: var(--mudo); border: 1px dashed var(--linha); border-radius: 10px; padding: 5px 9px; }
+.ferr b { color: var(--ambar); font-weight: 400; }
+.resultado-sim { display: grid; gap: 5px; }
+.item-sim { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 8px; font-size: 13px; background: var(--chao); border-radius: 10px; padding: 6px 9px; align-items: center; }
+.item-sim .k { color: var(--ambar); font-weight: 700; font-variant-numeric: tabular-nums; }
+.criterios { display: grid; gap: 4px; font-size: 12.5px; }
+.criterios div { display: grid; grid-template-columns: 18px 150px minmax(0, 1fr); gap: 6px; }
+.criterios .ok { color: var(--acacia); font-weight: 700; }
+.diff { font: 12px/1.5 ui-monospace, Consolas, monospace; background: var(--chao); border-radius: 10px; padding: 8px 10px; white-space: pre-wrap; }
+.diff .mais { color: var(--acacia); } .diff .menos { color: var(--perigo); }
+.sentinelas { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.sentinela { background: var(--alto); border-radius: 12px; padding: 8px 10px; font-size: 12.5px; display: grid; gap: 2px; }
+.sentinela b { font: 650 13px "Bricolage Grotesque"; display: flex; gap: 6px; align-items: center; }
+.sentinela b::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--acacia); }
+.sentinela.disparou b::before { background: var(--ambar); }
+.pilha { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--linha); }
+.pilha i { display: block; height: 100%; }
+.leg-origem { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--mudo); margin-bottom: 8px; }
+.leg-origem i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.vazio { color: var(--apagado); font-size: 13px; padding: 14px; text-align: center; border: 1px dashed var(--linha); border-radius: 14px; }
+.nota { font-size: 12.5px; color: var(--mudo); background: rgba(232,180,86,.06); border: 1px solid rgba(232,180,86,.25); border-radius: 12px; padding: 9px 12px; }
+#toast { position: fixed; right: 16px; bottom: 16px; background: var(--ink); color: var(--chao); padding: 10px 14px; border-radius: 12px; font-size: 13px; box-shadow: var(--sombra); display: none; max-width: 420px; z-index: 9; }
+@media (max-width: 1100px) { .corpo { grid-template-columns: 1fr; } .tela { height: auto; } }
+</style>
+<link rel="stylesheet" href="analises.css">
+</head>
+<body>
+<div class="tela">
+  <header class="topo">
+    <div class="marca">
+      <svg aria-hidden="true" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#d9a13b"/><path d="M18 64V41q0-8 8-9h4v32z" fill="#fff1d2"/><path d="M7 64l11-14 4 14z" fill="#3a2812"/><path d="M41 64L30 50l-4 14z" fill="#3a2812"/><path d="M23 34c0-7 5-11 12-11h7c6 0 10 3 10 7s-4 7-10 7H30c-4 0-7-1-7-3z" fill="#fff1d2"/><circle cx="38" cy="29" r="2.1" fill="#3a2812"/><path d="M28 23v-7q0-3 3-3h6q3 0 3 3v7z" fill="#3a2812"/><rect x="28" y="19.2" width="12" height="2.4" fill="#d9a13b"/><ellipse cx="34" cy="23.2" rx="12.5" ry="2.3" fill="#3a2812"/></svg>
+      <div><h1>Inspetor <span>Jirafalis</span></h1><small>Regras e cérebro · página de apoio da mesa</small></div>
+    </div>
+    <nav class="telas" aria-label="Telas do protótipo"><a href="mesa.html">Mesa do dia</a><a href="escala.html">Investigar</a><a href="regras.html" aria-current="page">Regras e cérebro</a><a href="onboarding.html">Onboarding</a><a href="../index.html">Apresentação</a></nav>
+    <div class="estado-topo" id="estado-topo"></div>
+  </header>
+  <div>
+    <div class="tarja" id="tarja" role="alert">
+      <div><b>R23 v2 · preencher campo Time · Mobile · gravou o valor errado</b>
+        <small>Onde: #219 "Push de pedido", campo Time = "Plataforma", hoje 14:05 · Como soube: verificação depois de gravar (o responsável é do time Mobile)</small>
+        <small>Já feito: valor desfeito (voltou a vazio) · ação rebaixada para júnior · o cérebro abriu uma proposta de melhoria</small></div>
+      <div class="botoes"><button class="btn peq" data-ir="log">Ver no log</button><button class="btn peq" id="tarja-vista">Vi</button></div>
+    </div>
+    <div class="abas" role="tablist" id="abas"></div>
+  </div>
+  <main class="corpo">
+    <section class="painel" id="principal" aria-live="polite"></section>
+    <aside class="painel" id="lado"></aside>
+  </main>
+</div>
+<div id="toast" role="status"></div>
+<script src="analises.js"></script>
+<script>
+// ---------- Atmosfera do processo (fictícia) ----------
+const ETAPAS = ["A fazer", "Em desenvolvimento", "Em revisão (PR)", "Em testes", "Em validação", "Pronto"];
+const TIMES = ["Pagamentos", "Onboarding", "Plataforma", "Checkout", "Antifraude", "Mobile", "Dados", "Parcerias", "Suporte interno"];
+const NIVEIS = { junior: "Júnior", pleno: "Pleno", senior: "Sênior", sim: "Simulação" };
+const CLASSES = {
+  R0: { nome: "leitura", limiar: null, prova: 0, ex: "alerta no painel, relatório" },
+  R1: { nome: "campo silencioso", limiar: .85, prova: 5, ex: "campo obrigatório, herança, de-para" },
+  R2: { nome: "fluxo visível", limiar: .92, prova: 10, ex: "mudança de status, comentário" },
+  R3: { nome: "mensagem a pessoas", limiar: .95, prova: 15, ex: "chat do time, pergunta ao dev" },
+};
+// itens do quadro (os mesmos do mapa de atuação)
+const ITENS = [
+  [100, "Criação de endpoint de estorno", "André Souza", "Pagamentos", 1, 10, "d"], [107, "Fila de retentativa", "Ana Lima", "Pagamentos", 4, 1, ""],
+  [114, "Template do recibo", "Bruno Reis", "Pagamentos", 2, 3, ""], [121, "Leitura do CPF", "Carla Mendes", "Onboarding", 1, 2, ""],
+  [128, "Captura da selfie", "Diego Prado", "Onboarding", 3, 5, "q"], [135, "E-mail de boas-vindas", "Elisa Rocha", "Onboarding", 5, 1, ""],
+  [142, "Painel de latência", "Fábio Nunes", "Plataforma", 1, 1, ""], [149, "Padrão de log", "Gabriela Dias", "Plataforma", 4, 4, ""],
+  [156, "Contador de mensagens", "Heitor Alves", "Plataforma", 5, 3, ""], [163, "Tokenização do cartão", "Igor Campos", "Checkout", 1, 7, "d"],
+  [170, "Validação do cupom", "Júlia Ramos", "Checkout", 2, 1, ""], [177, "Cálculo de frete", "Kauê Lopes", "Checkout", 1, 2, ""],
+  [184, "Bloqueio por CEP", "Lara Pinto", "Antifraude", 3, 4, "q"], [191, "Cadastro de exceção", "Marcos Teles", "Antifraude", 1, 3, ""],
+  [198, "Fila do analista", "Nina Duarte", "Antifraude", 2, 1, ""], [205, "Biometria no Android", "Otávio Melo", "Mobile", 1, 6, "d"],
+  [212, "Tema escuro nas telas", "Paula Freitas", "Mobile", 3, 1, ""], [219, "Push de pedido", "Rafael Costa", "Mobile", 1, 1, ""],
+  [226, "Exportação assíncrona", "Sara Moura", "Dados", 3, 6, "q"], [233, "Seletor de datas", "Tiago Neves", "Dados", 4, 1, ""],
+  [240, "Cache por cliente", "Úrsula Brito", "Dados", 1, 4, ""], [247, "Importação do catálogo", "Vítor Lemos", "Parcerias", 1, 9, "d"],
+  [254, "Cálculo do repasse", "Wanda Sales", "Parcerias", 2, 2, ""], [261, "Assinatura do contrato", "Yara Torres", "Parcerias", 0, 1, ""],
+  [268, "Busca por CPF", "Zeca Matos", "Suporte interno", 1, 3, ""], [275, "Macros no chat", "Bia Farias", "Suporte interno", 5, 1, ""],
+  [282, "Linha do tempo do cliente", "Caio Vidal", "Suporte interno", 2, 1, ""],
+].map(([k, titulo, dev, time, etapa, dias, marca]) => ({ k, titulo, dev, time, etapa, dias, marca }));
+const REF = [3, 4, 2, 2, 2, 0];
+
+// ---------- Padrões de regra do produto (PR-01 a PR-14) ----------
+const PADROES = {
+  "PR-01": ["Pai avança com o filho", "Pai em estado inicial passa a em andamento quando um filho começa", [["Nível pai", "sel", ["Épico", "História"], "Épico"], ["Nível filho", "sel", ["História", "Task"], "História"], ["Mover o pai para", "sel", ETAPAS, "Em desenvolvimento"]]],
+  "PR-02": ["Pai fecha com os filhos", "Pai conclui quando todos os filhos atingem um conjunto de estados", [["Nível pai", "sel", ["Épico", "História"], "Épico"], ["Filhos em", "sel", ["Pronto", "Em validação"], "Pronto"], ["Ignorar filhos", "txt", null, "cancelados"]]],
+  "PR-03": ["Pai reabre com filho aberto", "Pai concluído volta quando um filho ainda não terminou", [["Nível pai", "sel", ["Épico", "História"], "Épico"], ["Voltar o pai para", "sel", ETAPAS, "Em desenvolvimento"]]],
+  "PR-04": ["Estado da janela", "Item com a data D fica no estado E durante a janela", [["Campo de data", "sel", ["Data de entrega", "Prazo"], "Data de entrega"], ["Duração (dias)", "num", null, 30], ["Estado na janela", "txt", null, "Em validação"]]],
+  "PR-05": ["Transição em data", "No dia da data, a partir de uma hora, move o item", [["Campo de data", "sel", ["Data de entrega", "Prazo"], "Data de entrega"], ["A partir das", "txt", null, "09:00"], ["Mover para", "sel", ETAPAS, "Pronto"]]],
+  "PR-06": ["Transição com evidência", "Só move se a evidência (anexo ou campo) atende critérios", [["Evidência", "sel", ["Link do PR", "Anexo de testes", "Link do deploy"], "Link do deploy"], ["Ao entrar em", "sel", ETAPAS, "Pronto"]]],
+  "PR-07": ["Herança de campo", "Filho vazio recebe o valor do pai", [["Campo", "sel", ["Time", "Componente", "Prazo"], "Time"], ["De / para", "sel", ["Épico → História", "História → Task"], "Épico → História"]]],
+  "PR-08": ["Inferência de valor", "Preenche um campo vazio por inferência", [["Campo", "sel", ["Data de entrega", "Time", "Responsável de testes"], "Data de entrega"], ["Como inferir", "sel", ["data em que entrou em Pronto", "time do responsável", "quem moveu por último"], "data em que entrou em Pronto"]]],
+  "PR-09": ["De-para declarado", "Troca um valor antigo por um novo", [["Campo", "sel", ["Componente", "Time"], "Componente"], ["De → para", "txt", null, "App antigo → Mobile"]]],
+  "PR-10": ["Cadastro mínimo", "Campo vazio, curto ou inválido gera alerta ou pedido", [["Ao entrar em", "sel", ETAPAS, "Em testes"], ["Campo exigido", "sel", ["Responsável de testes", "Critério de aceite", "Descrição", "Link do PR"], "Responsável de testes"], ["O que fazer", "sel", ["alerta no painel", "comentário pedindo", "aviso no chat do time"], "aviso no chat do time"], ["Avisar quem", "sel", ["líder do time", "responsável do item", "gestor"], "líder do time"]]],
+  "PR-11": ["Saúde do fluxo", "Parado há N dias úteis, etapa pulada, pai e filho incoerentes", [["Etapa", "sel", ["qualquer etapa", ...ETAPAS.slice(0, 5)], "qualquer etapa"], ["Parado há mais de (dias úteis)", "num", null, 5], ["O que fazer", "sel", ["alerta no painel", "pergunta ao responsável", "comentário no item"], "alerta no painel"]]],
+  "PR-12": ["Vínculo entre espaços", "Item precisa estar ligado a um item de outro espaço", [["Item", "sel", ["História", "Bug"], "Bug"], ["Ligado a", "txt", null, "ocorrência do Suporte"], ["Janela (dias)", "num", null, 7]]],
+  "PR-13": ["Relatório e aviso agendado", "Resumo para um canal, num horário", [["Conteúdo", "sel", ["resumo da semana", "itens parados", "padrões entre times"], "resumo da semana"], ["Canal", "sel", ["chat do gestor", "chat do time", "e-mail"], "chat do gestor"], ["Quando", "txt", null, "sexta, 17:00"]]],
+  "PR-14": ["Confiança por time", "Nota de confiabilidade do dado por time", [["Critérios", "txt", null, "descrição, aceite, responsável, data"], ["Mostrar para", "sel", ["gestor", "líderes", "todos"], "gestor"]]],
+};
+
+// ---------- Regras do cliente fictício ----------
+// unidades: [ação, classe, escopo, nível, acertos, erros, dias em pleno, origem do nível]
+const REGRAS = [
+  { id: "R01", nome: "Épico avança com a história", padrao: "PR-01", v: 3, modo: "Ativa",
+    frase: "Quando a primeira história de um épico entra em desenvolvimento, o épico também vai para Em desenvolvimento.",
+    params: { "Nível pai": "Épico", "Nível filho": "História", "Mover o pai para": "Em desenvolvimento", "Exceto": "épico pausado" },
+    unidades: [["mudança de status", "R2", "todos os times", "senior", 214, 0, 22, "conquistado (tempo + portões)"], ["mudança de status", "R2", "Parcerias", "pleno", 31, 0, 3, "rebaixado em silêncio: status novo no espaço"]],
+    versoes: [["v1", "02/11", "criada conversando com a IA no onboarding"], ["v2", "08/11", "exceção para épico pausado (proposta do cérebro, aprovada)"], ["v3", "14/11", "ignora épicos cancelados; herdou o nível (replay 100%)"]],
+    excecoes: [["Épico pausado", "o time combinou pausar sem mexer nos filhos", "08/11"]] },
+  { id: "R04", nome: "Épico fecha com as histórias", padrao: "PR-02", v: 1, modo: "Ativa",
+    frase: "Quando todas as histórias de um épico estão em Pronto, o épico vai para Pronto.",
+    params: { "Nível pai": "Épico", "Filhos em": "Pronto", "Ignorar filhos": "cancelados", "Mínimo de filhos": "1" },
+    unidades: [["mudança de status", "R2", "todos os times", "pleno", 38, 0, 6, "conquistado (0,93 ≥ 0,92)"]],
+    versoes: [["v1", "03/11", "criada no painel, pelo formulário"]], excecoes: [] },
+  { id: "R06", nome: "Critério de aceite na história", padrao: "PR-10", v: 2, modo: "Ativa",
+    frase: "Toda história que entra em desenvolvimento precisa de critério de aceite. Se faltar, alerta no painel, pede no item e avisa o responsável no chat.",
+    params: { "Ao entrar em": "Em desenvolvimento", "Campo exigido": "Critério de aceite", "O que fazer": "alerta + comentário + chat", "Avisar quem": "responsável do item" },
+    unidades: [["alerta no painel", "R0", "todos os times", "senior", 96, 2, 0, "nasceu sênior (leitura)"], ["comentário pedindo", "R2", "todos os times", "pleno", 44, 1, 7, "conquistado"], ["mensagem no chat", "R3", "todos os times", "junior", 19, 3, 0, "ensaio: rascunhos aprovados"]],
+    versoes: [["v1", "02/11", "criada conversando com a IA no onboarding"], ["v2", "10/11", "mensagem sem citar o líder (12 edições iguais)"]], excecoes: [] },
+  { id: "R25", nome: "Responsável de testes", padrao: "PR-10", v: 1, modo: "Simulação",
+    frase: "Toda história que entra em Em testes precisa de um responsável de testes. Se não tiver, avisa o líder do time no chat, uma vez, e de novo depois de 2 dias úteis.",
+    params: { "Ao entrar em": "Em testes", "Campo exigido": "Responsável de testes", "O que fazer": "aviso no chat do time", "Avisar quem": "líder do time", "Repetir": "a cada 2 dias úteis" },
+    unidades: [["mensagem no chat", "R3", "todos os times", "sim", 0, 0, 0, "nasceu hoje no onboarding"]],
+    versoes: [["v1", "22/11", "criada conversando com a IA no onboarding (hoje)"]], excecoes: [] },
+  { id: "R09", nome: "Item parado há mais que a referência", padrao: "PR-11", v: 2, modo: "Ativa",
+    frase: "Item parado numa etapa por mais tempo que a referência da etapa vira alerta; passando do dobro, o Jirafalis sugere a pergunta ao responsável.",
+    params: { "Etapa": "qualquer etapa", "Referência": "por etapa (3, 4, 2, 2, 2 dias úteis)", "O que fazer": "alerta + pergunta ao responsável" },
+    unidades: [["alerta no painel", "R0", "todos os times", "senior", 140, 6, 0, "nasceu sênior (leitura)"], ["pergunta ao responsável", "R3", "todos os times", "pleno", 61, 2, 4, "ensaio aprovado: 0,95"]],
+    versoes: [["v1", "04/11", "criada no painel"], ["v2", "12/11", "referência por etapa, não fixa"]], excecoes: [["Suporte interno", "fluxo contínuo, sem sprint: referência própria", "12/11"]] },
+  { id: "R03", nome: "PR mergeado com card parado", padrao: "PR-11", v: 1, modo: "Ativa",
+    frase: "Se o PR de um item foi mergeado e o card continua em Em desenvolvimento por mais de 2 dias úteis, propõe mover o card para Em testes.",
+    params: { "Etapa": "Em desenvolvimento", "Sinal do git": "PR mergeado", "Parado há mais de (dias úteis)": "2", "O que fazer": "mover para Em testes" },
+    unidades: [["alerta no painel", "R0", "todos os times", "senior", 12, 0, 0, "nasceu sênior (leitura)"], ["mudança de status", "R2", "todos os times", "junior", 6, 0, 0, "regra candidata do padrão entre times"]],
+    versoes: [["v1", "20/11", "nasceu de um padrão entre times no mapa de atuação (4 times)"]], excecoes: [] },
+  { id: "R23", nome: "Time herdado do épico", padrao: "PR-07", v: 2, modo: "Ativa",
+    frase: "História sem o campo Time recebe o time do épico.",
+    params: { "Campo": "Time", "De / para": "Épico → História", "Só se": "o campo estiver vazio" },
+    unidades: [["preenchimento de campo", "R1", "todos os times", "senior", 188, 0, 9, "conquistado (tempo + portões)"]],
+    versoes: [["v1", "02/11", "criada conversando com a IA no onboarding"], ["v2", "11/11", "não preenche épico sem time"]], excecoes: [] },
+  { id: "R30", nome: "Resumo da semana para o gestor", padrao: "PR-13", v: 1, modo: "Ativa",
+    frase: "Toda sexta às 17h, um resumo no chat do gestor: padrões entre times, casos que pediram ação e o que as regras fizeram.",
+    params: { "Conteúdo": "resumo da semana", "Canal": "chat do gestor", "Quando": "sexta, 17:00" },
+    unidades: [["relatório", "R0", "gestor", "senior", 3, 0, 0, "nasceu sênior (leitura)"]],
+    versoes: [["v1", "05/11", "criada conversando com a IA"]], excecoes: [] },
+  { id: "R05", nome: "Data de entrega ao chegar em Pronto", padrao: "PR-08", v: 1, modo: "Ativa",
+    frase: "Quando o item entra em Pronto e a Data de entrega está vazia, preenche com a data em que entrou.",
+    params: { "Campo": "Data de entrega", "Como inferir": "data em que entrou em Pronto", "Só se": "o campo estiver vazio" },
+    unidades: [["preenchimento de campo", "R1", "todos os times", "pleno", 21, 0, 2, "conquistado (0,89 ≥ 0,85)"]],
+    versoes: [["v1", "09/11", "criada no painel, pelo formulário"]], excecoes: [] },
+];
+
+// ---------- Estado ----------
+const S = { aba: "regras", regra: "R01", modoNova: "painel", padrao: "PR-11", params: null, simulou: false, pausa: false, liberadas: 0, decisoes: {}, eufiz: {}, rascunhos: {}, propostas: {}, criadas: 0, chatPasso: 0 };
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function toast(t) { const el = $("#toast"); el.textContent = t; el.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => el.style.display = "none", 3800); }
+// limite inferior de Wilson (95% unilateral, z = 1,645); "meio erro" já vem somado em erros
+function wilson(acertos, n) { if (!n) return 0; const z = 1.645, p = acertos / n, z2 = z * z; return (p + z2 / (2 * n) - z * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n))) / (1 + z2 / n); }
+const nivelTag = n => `<span class="nivel ${n}">${NIVEIS[n]}</span>`;
+
+// ---------- Fila do dia ----------
+const PROPOSTAS_JR = [
+  { id: "j1", regra: "R03", item: 100, de: "Em desenvolvimento", para: "Em testes", evid: "PR #20 mergeado há 6 dias úteis · deploy em homologação às 11:12" },
+  { id: "j2", regra: "R03", item: 163, de: "Em desenvolvimento", para: "Em testes", evid: "PR #47 mergeado há 4 dias úteis" },
+  { id: "j3", regra: "R03", item: 205, de: "Em desenvolvimento", para: "Em testes", evid: "PR #65 mergeado há 3 dias úteis · 1 PR ainda aberto no mesmo item" },
+  { id: "j4", regra: "R03", item: 247, de: "Em desenvolvimento", para: "Em testes", evid: "PR #83 mergeado há 5 dias úteis" },
+];
+const RASCUNHOS = [
+  { id: "r1", regra: "R06", item: 121, para: "Carla Mendes (chat do time Onboarding)", texto: "Oi, Carla! O #121 \"Leitura do CPF\" entrou em desenvolvimento sem critério de aceite. Consegue incluir hoje? Assim o teste já sabe o que conferir." },
+  { id: "r2", regra: "R06", item: 240, para: "Úrsula Brito (chat do time Dados)", texto: "Oi, Úrsula! O #240 \"Cache por cliente\" está sem critério de aceite. Pode escrever como o teste vai saber que ficou pronto?" },
+];
+const EUFIZ = [
+  { id: "f1", regra: "R04", hora: "09:02", texto: "Épico \"Ferramentas do atendimento\" → Pronto (3 de 3 histórias em Pronto)" },
+  { id: "f2", regra: "R05", hora: "09:02", texto: "#135 \"E-mail de boas-vindas\": Data de entrega = 21/11 (entrou em Pronto nesse dia)" },
+  { id: "f3", regra: "R06", hora: "09:03", texto: "#240 \"Cache por cliente\": comentário pedindo critério de aceite" },
+  { id: "f4", regra: "R09", hora: "11:30", texto: "Pergunta enviada a Vítor Lemos sobre o #247 (9 dias úteis em desenvolvimento)" },
+];
+const MOTIVOS = ["valor errado", "item é exceção", "hora errada", "pessoa errada", "já resolvido"];
+const item = k => ITENS.find(i => i.k === k);
+
+function fila() {
+  const pend = PROPOSTAS_JR.filter(p => !S.decisoes[p.id]).length + RASCUNHOS.filter(r => !S.rascunhos[r.id]).length;
+  return `<h2>Hoje, 22/11 <span class="tag">${pend} esperando você</span></h2>
+  <p class="sub">Júnior propõe e espera você. Pleno faz nos horários agendados e conta o que fez. Sênior faz sozinho e só aparece se der erro.</p>
+  <h3>${nivelTag("junior")} Esperando o seu Liberar</h3>
+  ${PROPOSTAS_JR.map(p => { const it = item(p.item), d = S.decisoes[p.id]; return `<div class="cartao">
+    <div class="linha1"><span class="risco">R2</span><b>#${it.k} ${esc(it.titulo)}</b><span class="tag">${it.time}</span><span class="tag">${it.dev}</span><span class="tag" style="margin-left:auto">${p.regra} · mudança de status</span></div>
+    <div class="de-para"><span class="de">${p.de}</span>→<span class="para">${p.para}</span></div>
+    <div class="evid">${p.evid}</div>
+    ${d ? `<div class="feito ${d.ok ? "ok" : "nao"}">${d.ok ? `Liberado · grava às 14:00${d.editado ? " (editado)" : ""}` : `Reprovado · motivo: ${d.motivo}`} <button class="btn peq" data-desfaz-dec="${p.id}">Voltar atrás</button></div>`
+      : `<div class="botoes"><button class="btn bom" data-lib="${p.id}">Liberar</button><button class="btn" data-edit="${p.id}">Editar e liberar</button><span class="mudo" style="font-size:12px">Reprovar porque:</span><span class="chips">${MOTIVOS.map(m => `<button class="chip" data-rep="${p.id}" data-mot="${m}">${m}</button>`).join("")}</span></div>`}
+  </div>`; }).join("")}
+  <h3>${nivelTag("junior")} Ensaio de mensagem (R3) · rascunhos para aprovar</h3>
+  <p class="sub">Mensagem a pessoas não tem volta. Antes de ganhar o canal, a ação ensaia: você aprova o texto e o destinatário.</p>
+  ${RASCUNHOS.map(r => { const d = S.rascunhos[r.id]; return `<div class="cartao">
+    <div class="linha1"><span class="risco">R3</span><b>Para ${esc(r.para)}</b><span class="tag" style="margin-left:auto">${r.regra} · mensagem no chat</span></div>
+    ${d ? `<div class="evid">${esc(d.texto)}</div><div class="feito ${d.ok ? "ok" : "nao"}">${d.ok ? (d.editado ? "Aprovado com edição (conta meio acerto)" : "Aprovado sem edição") : "Descartado"}</div>`
+      : `<textarea id="txt-${r.id}">${esc(r.texto)}</textarea><div class="botoes"><button class="btn bom" data-apr="${r.id}">Aprovar e enviar</button><button class="btn mau" data-desc="${r.id}">Descartar</button></div>`}
+  </div>`; }).join("")}
+  <h3>${nivelTag("pleno")} Eu fiz · desde a última vez que você olhou</h3>
+  ${EUFIZ.map(f => `<div class="cartao"><div class="linha1"><span class="tag">${f.hora}</span><b style="font-weight:400;font-family:inherit;font-size:13.5px">${esc(f.texto)}</b><span class="tag" style="margin-left:auto">${f.regra}</span></div>
+    ${S.eufiz[f.id] ? `<div class="feito nao">Desfeito: a foto do antes foi restaurada; a ação voltou a júnior.</div>` : `<div class="botoes"><button class="btn peq" data-desfaz="${f.id}">Desfazer</button><span class="apagado" style="font-size:12px">Não fazer nada também é um sinal: conta como acerto.</span></div>`}</div>`).join("")}
+  <h3>${nivelTag("senior")} Sênior</h3>
+  <div class="cartao"><div class="linha1"><b style="font-weight:400;font-family:inherit">23 ações sênior hoje · nenhum erro com efeito.</b><button class="btn peq" data-ir="log" style="margin-left:auto">Ver no log</button></div>
+  <small>Sênior não reporta: o log é o registro. Se uma ação sênior errar com efeito, aparece uma tarja vermelha no topo.</small></div>
+  <h3>${nivelTag("sim")} Em simulação · só mostra o que faria</h3>
+  <div class="cartao"><div class="linha1"><b>R25 Responsável de testes</b><span class="tag" style="margin-left:auto">nasceu hoje no onboarding</span></div>
+  <small>Se estivesse ativa hoje, avisaria 3 líderes: #128 Captura da selfie (Onboarding), #184 Bloqueio por CEP (Antifraude), #226 Exportação assíncrona (Dados).</small>
+  <div class="botoes"><button class="btn peq" data-abre-regra="R25">Abrir a ficha</button></div></div>`;
+}
+function ladoFila() {
+  return `<h3>Execução</h3>
+  <div class="cartao"><div class="linha1"><b>Gravação agendada · hoje 14:00</b></div>
+  <small>${S.liberadas} liberada(s) por você + ações de pleno. O Jirafalis lê o quadro de novo antes de gravar e grava de uma vez.</small>
+  <div class="botoes"><button class="btn forte" id="gravar" ${S.pausa ? "disabled" : ""}>Gravar agora</button><button class="btn ${S.pausa ? "bom" : "mau"}" id="pausa">${S.pausa ? "Retomar" : "Pausa geral"}</button></div></div>
+  <div class="kv" style="margin:8px 2px"><dt>Próxima leitura</dt><dd>12:30 (a cada 30 min, só lendo)</dd><dt>Horários de escrita</dt><dd>09:00 · 14:00 · 17:30</dd><dt>Regras ativas</dt><dd>8 ativas · 1 em simulação</dd><dt>Ações por nível</dt><dd>${nivelTag("senior")} 6 &nbsp;${nivelTag("pleno")} 5 &nbsp;${nivelTag("junior")} 2 &nbsp;${nivelTag("sim")} 1</dd></div>
+  <h3>Travas que valem para toda escrita</h3>
+  <div class="travas">
+    <div>Toda regra nasce em Simulação e no nível júnior</div><div>Estreia de 1 item; depois, lote de no máximo 20 por execução</div>
+    <div>Releitura do item imediatamente antes de gravar</div><div>Foto do antes em toda escrita: tudo pode ser desfeito</div>
+    <div>No máximo 1 escrita por item por execução</div><div>Não mexe em item que uma pessoa mudou nas últimas 24 h</div>
+    <div>Estados protegidos: só o responsável humano move</div><div>Guarda contra laço entre regras e automações</div>
+    <div>Para sozinho se os erros passarem do limite</div><div>Exceções com motivo e data, revisadas</div>
+    <div>Campo só é preenchido se estiver vazio</div><div>Assinatura própria em tudo o que escreve</div>
+  </div>
+  <h3>Onde os avisos chegam</h3>
+  <div class="kv"><dt>Comentário no item</dt><dd>Jira, Azure DevOps…</dd><dt>Chat do time</dt><dd>Slack, Teams, Google Chat</dd><dt>Chat do gestor</dt><dd>resumos (R30)</dd><dt>Retorno</dt><dd>sem resposta em 24 h, volta para você</dd></div>`;
+}
+
+// ---------- Regras e ficha ----------
+function listaRegras() {
+  return `<h2>Regras <span class="tag">${REGRAS.length} regras · ${REGRAS.reduce((a, r) => a + r.unidades.length, 0)} ações</span></h2>
+  <p class="sub">Cada regra é um padrão do produto com os termos do seu processo. A senioridade é de cada <b>ação</b> da regra, por classe de risco e por time.</p>
+  ${REGRAS.map(r => `<button class="cartao clicavel ${S.regra === r.id ? "sel" : ""}" data-regra="${r.id}">
+    <span class="linha1"><b>${r.id} ${esc(r.nome)}</b><span class="tag">${r.padrao} ${PADROES[r.padrao][0]}</span><span class="tag">v${r.v}</span><span class="tag">${r.modo}</span></span>
+    <small>${esc(r.frase)}</small>
+    <span class="chips">${r.unidades.map(u => `<span class="tag" style="display:inline-flex;gap:5px;align-items:center"><span class="risco">${u[1]}</span>${u[0]}${u[2] !== "todos os times" ? " · " + u[2] : ""} ${nivelTag(u[3])}</span>`).join("")}</span>
+  </button>`).join("")}
+  <div class="botoes" style="margin-top:6px"><button class="btn forte" data-ir="nova">Nova regra</button></div>`;
+}
+function ficha(id) {
+  const r = REGRAS.find(x => x.id === id);
+  return `<h2>${r.id} ${esc(r.nome)}</h2>
+  <div class="botoes" style="margin-bottom:10px"><span class="tag">${r.padrao} · ${PADROES[r.padrao][0]}</span><span class="tag">v${r.v}</span><span class="tag">${r.modo}</span></div>
+  <div class="portugues">${esc(r.frase)}</div>
+  <h3>Parâmetros (termos do seu processo)</h3>
+  <dl class="kv">${Object.entries(r.params).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+  <h3>Ações e confiança</h3>
+  ${r.unidades.map(([acao, cl, escopo, nv, ac, er, dp, origem]) => { const n = ac + er, ic = cl === "R0" ? 1 - er / Math.max(n, 1) : wilson(ac, n), lim = CLASSES[cl].limiar; return `<div class="cartao">
+    <div class="linha1"><span class="risco">${cl}</span><b>${acao}</b><span class="tag">${escopo}</span><span style="margin-left:auto">${nivelTag(nv)}</span></div>
+    ${cl === "R0" ? `<small>Leitura nasce sênior; a confiança mede falsos positivos: ${er} dispensado(s) em ${n}.</small>` : n ? `<div class="conf"><div class="trilho"><i class="${ic >= lim ? "passou" : ""}" style="width:${(ic * 100).toFixed(0)}%"></i><u style="left:${lim * 100}%" title="limiar da classe"></u></div><span>${ic.toFixed(2).replace(".", ",")}</span></div>
+    <small>${ac} acertos, ${er} erro(s) · limiar ${String(lim).replace(".", ",")} (limite inferior de Wilson) · ${nv === "pleno" ? `${dp} de ${CLASSES[cl].prova} dias úteis de prova para sênior` : nv === "senior" ? "vigiada pelas sentinelas" : "faltam liberações limpas para pleno"}</small>` : `<small>Sem evidência ainda: em simulação, mostra o que faria.</small>`}
+    <small class="apagado">Origem do nível: ${origem}</small>
+  </div>`; }).join("")}
+  <div class="botoes"><button class="btn" data-sim-regra="${r.id}">Simular agora</button><button class="btn">Editar (nova versão)</button><button class="btn mau">Suspender</button><button class="btn">Nunca sênior</button><button class="btn">Já confio</button></div>
+  <h3>Versões</h3>
+  <table><tbody>${r.versoes.map(v => `<tr><td><b>${v[0]}</b></td><td class="mudo">${v[1]}</td><td>${esc(v[2])}</td></tr>`).join("")}</tbody></table>
+  <h3>Exceções</h3>
+  ${r.excecoes.length ? `<table><tbody>${r.excecoes.map(e => `<tr><td><b>${esc(e[0])}</b></td><td>${esc(e[1])}</td><td class="mudo">${e[2]}</td></tr>`).join("")}</tbody></table>` : `<p class="sub">Nenhuma.</p>`}
+  <h3>Plano de promoção</h3>
+  <p class="sub">Júnior → pleno pelo limite inferior de confiança da classe. Pleno → sênior por tempo, com portões: sem erro nem desfeita, versão estável, sem deriva, sem melhoria pendente e evidência variada. Erro com efeito volta a júnior.</p>`;
+}
+
+// ---------- Nova regra: com e sem a IA ----------
+function paramsPadrao(cod) { const o = {}; PADROES[cod][2].forEach(([l, , , d]) => o[l] = d); return o; }
+function frasePortugues(cod, p) {
+  const v = Object.values(p);
+  switch (cod) {
+    case "PR-10": return `Toda história que entra em ${p["Ao entrar em"]} precisa de ${p["Campo exigido"]}. Se faltar: ${p["O que fazer"]}, para o ${p["Avisar quem"]}.`;
+    case "PR-11": return `Item parado ${p["Etapa"] === "qualquer etapa" ? "em qualquer etapa" : "em " + p["Etapa"]} há mais de ${p["Parado há mais de (dias úteis)"]} dias úteis: ${p["O que fazer"]}.`;
+    case "PR-01": return `Quando um(a) ${p["Nível filho"]} começa, o ${p["Nível pai"]} vai para ${p["Mover o pai para"]}.`;
+    default: return `${PADROES[cod][1]}: ${v.join(" · ")}.`;
+  }
+}
+function dsl(cod, p) {
+  const nome = PADROES[cod][0].toLowerCase().replace(/ /g, "-").normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const ent = Object.entries(p).map(([k, v]) => `    <span class="k">"${k}"</span>: ${typeof v === "number" ? v : `<span class="s">"${esc(v)}"</span>`}`).join(",\n");
+  const escrita = /alerta|relat|Confiança/.test(JSON.stringify(p)) && !/comentário|chat|pergunta|Mover|Voltar/.test(JSON.stringify(p)) ? "R0" : /chat|pergunta/.test(JSON.stringify(p)) ? "R3" : /Campo|campo/.test(Object.keys(p).join()) && !/Mover|Voltar/.test(Object.keys(p).join()) ? "R1" : "R2";
+  return { cls: escrita, html: `{
+  <span class="k">"padrao"</span>: <span class="s">"${cod} ${nome}"</span>,
+  <span class="k">"versao"</span>: 1,
+  <span class="k">"parametros"</span>: {
+${ent}
+  },
+  <span class="k">"escopo"</span>: <span class="s">"todos os times"</span>,
+  <span class="k">"classe_de_risco"</span>: <span class="s">"${escrita}"</span>,
+  <span class="k">"modo"</span>: <span class="s">"simulacao"</span>,   <span class="c">// toda regra nasce assim</span>
+  <span class="k">"nivel"</span>: <span class="s">"junior"</span>
+}` };
+}
+function simular(cod, p) {
+  if (cod === "PR-11") { const n = +p["Parado há mais de (dias úteis)"] || 0, e = ETAPAS.indexOf(p["Etapa"]); return ITENS.filter(i => i.etapa < 5 && i.dias > n && (e < 0 || i.etapa === e)); }
+  if (cod === "PR-10") { const e = ETAPAS.indexOf(p["Ao entrar em"]); return e === 3 ? ITENS.filter(i => i.marca === "q") : ITENS.filter(i => i.etapa === e).slice(0, 2); }
+  if (cod === "PR-01") return ITENS.filter(i => [121, 177].includes(i.k));
+  return ITENS.filter(i => [135, 156].includes(i.k));
+}
+function nova() {
+  const modo = `<div class="botoes" style="margin-bottom:12px"><span class="modo" role="group" aria-label="Como criar"><button data-modo="painel" aria-pressed="${S.modoNova === "painel"}">Sozinho, pelo painel</button><button data-modo="ia" aria-pressed="${S.modoNova === "ia"}">Com a IA (Claude como cocriador)</button></span>
+    <span class="mudo" style="font-size:12.5px">Os dois caminhos geram a mesma regra, no mesmo lugar.</span></div>`;
+  if (S.modoNova === "ia") return `<h2>Nova regra · conversando</h2>${modo}${chatNova()}`;
+  if (!S.params) S.params = paramsPadrao(S.padrao);
+  const campos = PADROES[S.padrao][2];
+  return `<h2>Nova regra · pelo painel</h2>${modo}
+  <div class="passos-nr"><span class="on">1 · padrão</span><span class="on">2 · parâmetros</span><span class="on">3 · conferir</span><span class="${S.simulou ? "on" : ""}">4 · simular</span><span>5 · salvar</span></div>
+  <h3>1 · Escolha o padrão</h3>
+  <div class="padroes">${Object.entries(PADROES).map(([c, [n, d]]) => `<button class="padrao-btn" data-padrao="${c}" aria-pressed="${S.padrao === c}"><span class="cod">${c}</span><b>${n}</b><small>${d}</small></button>`).join("")}</div>
+  <h3>2 · Preencha com os termos do seu processo</h3>
+  <div class="grade2">${campos.map(([l, t, ops]) => `<label style="display:grid;gap:4px;font-size:12.5px;color:var(--mudo)">${l}${t === "sel" ? `<select data-param="${l}">${ops.map(o => `<option ${S.params[l] === o ? "selected" : ""}>${o}</option>`).join("")}</select>` : `<input type="${t === "num" ? "number" : "text"}" data-param="${l}" value="${esc(S.params[l])}">`}</label>`).join("")}
+  <label style="display:grid;gap:4px;font-size:12.5px;color:var(--mudo)">Escopo<select><option>todos os times</option>${TIMES.map(t => `<option>${t}</option>`).join("")}</select></label>
+  <label style="display:grid;gap:4px;font-size:12.5px;color:var(--mudo)">Exceto<input type="text" placeholder="ex.: tipo = Bug, time Suporte interno"></label></div>
+  <p class="sub" style="margin-top:8px">As opções vêm da atmosfera do processo, descoberta no onboarding: só aparecem etapas, campos e times que existem na sua ferramenta.</p>`;
+}
+function ladoNova() {
+  if (S.modoNova === "ia" && S.chatPasso < 3) return `<h3>O rascunho aparece aqui</h3><div class="vazio">Conforme a conversa avança, o Jirafalis monta a regra: o padrão, os parâmetros e as perguntas sobre o que ficou ambíguo.</div>
+  <div class="nota" style="margin-top:10px"><b>A conversa cria, o painel registra e controla.</b> A regra nascida no chat vira uma versão editável aqui, em Simulação, no nível júnior.</div>`;
+  const cod = S.modoNova === "ia" ? "PR-10" : S.padrao, p = S.modoNova === "ia" ? { "Ao entrar em": "Em testes", "Campo exigido": "Responsável de testes", "O que fazer": "aviso no chat do time", "Avisar quem": "líder do time" } : S.params;
+  const d = dsl(cod, p), res = simular(cod, p), mostrarSim = S.modoNova === "ia" ? S.chatPasso >= 4 : S.simulou;
+  return `<h3>3 · Em português</h3><div class="portugues">${esc(frasePortugues(cod, p))}</div>
+  <h3>A regra que o motor executa <span class="risco">${d.cls} · ${CLASSES[d.cls].nome}</span></h3><div class="dsl">${d.html}</div>
+  <h3>Validação contra o seu processo</h3>
+  <div class="travas"><div>As etapas e os campos existem na atmosfera v1</div><div>A transição é permitida no fluxo</div><div>Não briga com outra regra (sem laço com as regras ligadas)</div><div>Não toca em estado protegido</div></div>
+  <h3>4 · Simular na foto de hoje</h3>
+  ${mostrarSim ? `<div class="resultado-sim"><b>Hoje pegaria ${res.length} ${res.length === 1 ? "item" : "itens"}:</b>${res.slice(0, 8).map(i => `<div class="item-sim"><span class="k">#${i.k}</span><span>${esc(i.titulo)} <span class="apagado">· ${i.time} · ${ETAPAS[i.etapa]} há ${i.dias} d</span></span><span class="tag">${i.dev.split(" ")[0]}</span></div>`).join("")}${res.length > 8 ? `<small class="mudo">e mais ${res.length - 8}</small>` : ""}</div>`
+    : `<button class="btn" id="simular">Simular</button>`}
+  <h3>5 · Salvar</h3>
+  <div class="botoes"><button class="btn forte" id="salvar" ${mostrarSim ? "" : "disabled"}>Salvar em Simulação · júnior</button>${S.modoNova === "ia" ? `<button class="btn" id="abrir-painel">Abrir no formulário</button>` : ""}</div>
+  <p class="sub" style="margin-top:6px">Depois você combina o plano de promoção. Nada é gravado na ferramenta até você liberar.</p>`;
+}
+const CHAT = [
+  [["eu", "Quero que toda história que for para Em testes tenha um responsável de testes. Se não tiver, avisa o líder do time no Slack."],
+   ["ferr", "jirafalis · propor_regra(texto do gestor)"],
+   ["ia", "Entendi. É o padrão <b>PR-10 Cadastro mínimo</b> com aviso no chat. No seu processo, “Em testes” é a etapa 4 e o campo é “Responsável de testes”. Uma dúvida: aviso o líder <b>uma vez por item</b> ou <b>todo dia</b> enquanto faltar?"]],
+  [["eu", "Uma vez, e de novo se passar 2 dias úteis."],
+   ["ia", "Combinado. Outra: vale para todos os 9 times? O Suporte interno não tem etapa de testes separada."]],
+  [["eu", "Todos, menos o Suporte interno."],
+   ["ferr", "jirafalis · validar_regra → etapas, campo e canal existem · sem laço"],
+   ["ia", "Montei o rascunho (ao lado). Quer que eu simule com os itens de hoje?"]],
+  [["eu", "Simula."],
+   ["ferr", "jirafalis · pedir_amostra → consulta pronta"],
+   ["ferr", "jira · buscar itens (Em testes, campo Responsável de testes vazio)"],
+   ["ferr", "jirafalis · registrar_amostra(3 itens)"],
+   ["ia", "Hoje pegaria <b>3 itens</b>: #128 Captura da selfie (Onboarding), #184 Bloqueio por CEP (Antifraude) e #226 Exportação assíncrona (Dados). Salvo em Simulação, como júnior?"]],
+  [["eu", "Salva."],
+   ["ferr", "jirafalis · salvar_regra → 55 v1 · Simulação · júnior"],
+   ["ia", "Salvei. Está no painel como <b>55 v1</b>, em Simulação. Como é mensagem a pessoas (R3), ela começa ensaiando: os primeiros avisos chegam para você aprovar o texto antes de irem ao Slack."]],
+];
+function chatNova() {
+  const msgs = CHAT.slice(0, S.chatPasso + 1).flat();
+  return `<p class="sub">O gestor conversa com o Claude que já usa (claude.ai ou Claude Code), com o conector do Jirafalis ligado. O Claude lê a ferramenta pelos conectores do próprio gestor; o Jirafalis monta, valida e simula a regra.</p>
+  <div class="chat">${msgs.map(([t, x]) => t === "ferr" ? `<div class="ferr">⚙ <b>${x.split(" · ")[0]}</b> · ${x.split(" · ").slice(1).join(" · ")}</div>` : `<div class="msg ${t}"><span class="quem">${t === "eu" ? "Gestor" : "Claude + Jirafalis"}</span>${x}</div>`).join("")}</div>
+  <div class="botoes" style="margin-top:12px">${S.chatPasso < CHAT.length - 1 ? `<button class="btn forte" id="chat-prox">Próxima fala ▸</button>` : `<span class="feito ok">Regra salva pela conversa.</span>`}<button class="btn" id="chat-zera">Recomeçar</button></div>`;
+}
+
+// ---------- Cérebro das regras ----------
+const PROPOSTAS = [
+  { id: "m1", regra: "R09", unidade: "pergunta ao responsável", titulo: "Não perguntar quando o item é um Bug",
+    achado: "Você reprovou 7 de 9 perguntas sugeridas quando o item é do tipo Bug. Nos outros tipos, reprovou 2 de 54.",
+    crit: [["Frequência", "9 vezes em 6 dias distintos (mínimo: 5 em 3)"], ["Consistência", "89% de reprovação no grupo (mínimo: 80%)"], ["Diferença real", "teste exato de Fisher, p = 0,0001"], ["Tempo de uso", "v2 em uso há 10 dias úteis"], ["Regressão", "a v3 concorda com 61 de 61 decisões aprovadas e acerta 7 de 7 casos"], ["Impacto", "−3 perguntas por semana; confiança 0,95 → 0,97"]],
+    diff: [["", "condicao: item parado acima da referência"], ["mais", "exceto: tipo = Bug   # bug segue o fluxo de sustentação"]] },
+  { id: "m2", regra: "Atmosfera", unidade: "deriva de configuração", titulo: "Mapear o status novo “Em homologação” (Parcerias)",
+    achado: "Apareceu no espaço Parcerias o status “Em homologação”, entre Em testes e Em validação. As regras não o conhecem; a R01 foi rebaixada a pleno nesse time, em silêncio.",
+    crit: [["Frequência", "5 itens passaram pelo status desde 19/11"], ["Sugestão (IA)", "equivale à etapa canônica Em validação (confiança 0,82)"], ["Regressão", "nenhuma decisão antiga muda"], ["Impacto", "a R01 volta a sênior em Parcerias após 5 dias úteis (metade da prova)"]],
+    diff: [["", "Em validação ← Em validação, Aguardando aceite"], ["mais", "Em validação ← Em homologação   # Parcerias"]] },
+];
+function cerebro() {
+  return `<h2>Cérebro das regras</h2>
+  <p class="sub">Verifica tudo, o tempo todo: o que as regras fizeram, o que você decidiu e como o mundo reagiu depois. Indica melhorias só com evidência e vigia as ações sênior. <b>Prevenção é invisível; dano é visível.</b></p>
+  <h3>Propostas de melhoria <span class="tag">${PROPOSTAS.filter(p => !S.propostas[p.id]).length} abertas</span></h3>
+  ${PROPOSTAS.map(p => { const d = S.propostas[p.id]; return `<div class="cartao">
+    <div class="linha1"><b>${esc(p.titulo)}</b><span class="tag" style="margin-left:auto">${p.regra} · ${p.unidade}</span></div>
+    <div class="evid">${esc(p.achado)}</div>
+    <div class="criterios">${p.crit.map(c => `<div><span class="ok">✓</span><span class="mudo">${c[0]}</span><span>${esc(c[1])}</span></div>`).join("")}</div>
+    <div class="diff">${p.diff.map(([t, l]) => `<span class="${t}">${t === "mais" ? "+ " : "  "}${esc(l)}</span>`).join("\n")}</div>
+    ${d ? `<div class="feito ${d === "aprovada" ? "ok" : "nao"}">${d === "aprovada" ? "Aprovada · versão nova herda o nível depois da estreia (1 item, depois lote de 20)" : d === "adiada" ? "Adiada por 7 dias" : "Recusada · o motivo também ensina o cérebro"}</div>`
+      : `<div class="botoes"><button class="btn bom" data-prop="${p.id}" data-res="aprovada">Aprovar</button><button class="btn mau" data-prop="${p.id}" data-res="recusada">Recusar</button><button class="btn" data-prop="${p.id}" data-res="adiada">Adiar</button></div>`}
+  </div>`; }).join("")}
+  <h3>Promoções e rebaixamentos (o porquê de cada um)</h3>
+  <table><thead><tr><th>Quando</th><th>Ação</th><th>Mudou</th><th>Por quê</th></tr></thead><tbody>
+    <tr><td class="mudo">21/11</td><td>R23 · campo · todos</td><td>${nivelTag("pleno")} → ${nivelTag("senior")}</td><td>5 dias úteis em pleno, todos os portões abertos</td></tr>
+    <tr><td class="mudo">20/11</td><td>R01 · status · Parcerias</td><td>${nivelTag("senior")} → ${nivelTag("pleno")}</td><td>Deriva de configuração: status novo. Em silêncio, nada errado aconteceu</td></tr>
+    <tr><td class="mudo">19/11</td><td>R09 · pergunta · todos</td><td>${nivelTag("junior")} → ${nivelTag("pleno")}</td><td>Ensaio: 61 rascunhos, 2 com edição; limite inferior 0,95</td></tr>
+    <tr><td class="mudo">18/11</td><td>R06 · alerta · todos</td><td>${nivelTag("senior")}</td><td>Nasceu sênior: leitura (R0)</td></tr>
+    <tr><td class="mudo">14/11</td><td>R01 v3 · status · todos</td><td>herdou ${nivelTag("senior")}</td><td>Replay sobre 214 decisões: concordou com 100%</td></tr>
+  </tbody></table>
+  <h3>Sentinelas</h3>
+  <div class="sentinelas">
+    <div class="sentinela"><b>Verificação antes</b>releitura antes de agir: 312 checagens hoje, 4 itens já resolvidos e pulados</div>
+    <div class="sentinela"><b>Verificação depois</b>releitura depois de gravar: a mudança ficou em 100%</div>
+    <div class="sentinela"><b>Reversão pelo mundo</b>ninguém desfez uma ação nas últimas 24 h</div>
+    <div class="sentinela disparou"><b>Deriva de configuração</b>status novo em Parcerias · disjuntor aberto para a R01 nesse time</div>
+    <div class="sentinela"><b>Deriva de dados</b>valores dentro do domínio conhecido</div>
+    <div class="sentinela"><b>Volume anômalo</b>nenhuma ação quis atingir 3× o normal</div>
+    <div class="sentinela"><b>Laço e conflito</b>nenhuma automação brigando pelo mesmo campo</div>
+    <div class="sentinela"><b>Canal</b>todas as mensagens entregues; 0 “não era comigo”</div>
+  </div>`;
+}
+function ladoCerebro() {
+  return `<h3>Classes de risco e limiares</h3>
+  <table><thead><tr><th>Classe</th><th>Júnior → pleno</th><th>Pleno → sênior</th></tr></thead><tbody>
+  ${Object.entries(CLASSES).map(([k, c]) => `<tr><td><span class="risco">${k}</span> ${c.nome}<br><small class="apagado">${c.ex}</small></td><td>${c.limiar ? `≥ ${String(c.limiar).replace(".", ",")}<br><small class="apagado">~${Math.ceil(c.limiar * 2.7 / (1 - c.limiar))} sem erro</small>` : "nasce sênior"}</td><td>${c.prova ? c.prova + " dias úteis" : "—"}</td></tr>`).join("")}
+  </tbody></table>
+  <p class="sub" style="margin-top:8px">A confiança é o <b>limite inferior</b> do intervalo de Wilson, não a média: 10 de 10 não vale o mesmo que 200 de 200. Evidência velha pesa menos (meia-vida de 30 dias úteis) e precisa vir de semanas e times variados. Você ajusta tudo no onboarding.</p>
+  <h3>De onde vem a evidência</h3>
+  <dl class="kv"><dt>Seu julgamento</dt><dd>liberou, reprovou (com motivo), editou antes de liberar</dd><dt>Execução</dt><dd>gravou e conferiu, desfeita, erro de API, suspensão</dd><dt>Reação do mundo</dt><dd>alguém desfez no Jira em 24 h, item corrigido depois do alerta, alerta dispensado</dd><dt>Estabilidade</dt><dd>workflow, status ou campo mudou; volume fora do normal</dd><dt>Retrospecto</dt><dd>o que a regra teria feito nos últimos 90 dias × o que as pessoas fizeram</dd></dl>
+  <h3>Nascer sênior</h3>
+  <dl class="kv"><dt>Retrospecto forte</dt><dd>≥ 99% de concordância com o histórico (R0 a R2)</dd><dt>Padrão comprovado</dt><dd>o mesmo padrão e versão já é sênior em outro espaço</dd><dt>Decisão sua</dt><dd>“já confio”, com motivo e vigilância reforçada por 2 semanas</dd></dl>
+  <h3>Tarja vermelha</h3>
+  <p class="sub">Só aparece quando um erro chegou ao mundo: o quê, onde, quando e o que o sistema já fez.</p>
+  <a class="btn mau" href="mesa.html#tarja" style="text-decoration:none">Ver a tarja na mesa do dia</a>
+  <h3>Onde entra IA no cérebro</h3>
+  <dl class="kv"><dt>Usa IA</dt><dd>agrupar motivos escritos, redigir a proposta, sugerir o mapeamento de um status novo, resumir o log</dd><dt>Não usa IA</dt><dd>calcular a confiança, promover e rebaixar, executar a regra, o replay e as verificações</dd></dl>`;
+}
+
+// ---------- Log ----------
+const LOG = [
+  ["14:05", "R23 v2", "campo", "Mobile", "#219", "preencheu Time = Plataforma", "erro · desfeito · júnior", "senior"],
+  ["11:30", "R09 v2", "pergunta", "Parcerias", "#247", "enviou pergunta a Vítor (rascunho aprovado em 19/11)", "entregue", "pleno"],
+  ["11:12", "Observador", "reação", "Pagamentos", "#100", "deploy em homologação lido do git", "evidência", "—"],
+  ["10:44", "R06 v2", "alerta", "Dados", "#240", "alerta: sem descrição", "acerto (item corrigido depois)", "senior"],
+  ["09:03", "R06 v2", "comentário", "Dados", "#240", "comentou pedindo descrição", "gravou e conferiu", "pleno"],
+  ["09:02", "R05 v1", "campo", "Onboarding", "#135", "Data de entrega = 21/11", "gravou e conferiu", "pleno"],
+  ["09:02", "R04 v1", "status", "Suporte interno", "épico", "Ferramentas do atendimento → Pronto", "gravou e conferiu", "pleno"],
+  ["09:01", "R01 v3", "status", "Checkout", "épico", "Checkout em 1 clique → Em desenvolvimento", "gravou e conferiu", "senior"],
+  ["09:01", "R23 v2", "campo", "Checkout", "#177", "Time = Checkout (herdado do épico)", "gravou e conferiu", "senior"],
+  ["09:00", "Guardião", "sentinela", "todos", "—", "verificação antes: 4 itens já resolvidos, pulados", "registrado", "—"],
+  ["08:30", "Leitura", "leitura", "todos", "—", "leu 9 espaços e 4 repositórios (incremental)", "ok", "—"],
+  ["21/11", "Promotor", "promoção", "todos", "—", "R23 · campo → sênior (5 dias úteis, portões abertos)", "registrado", "—"],
+  ["20/11", "Guardião", "deriva", "Parcerias", "—", "status novo “Em homologação”: R01 rebaixada a pleno", "silencioso", "—"],
+];
+function log() {
+  return `<h2>Log <span class="tag">só acrescenta</span></h2>
+  <p class="sub">Tudo o que o Jirafalis leu, decidiu, gravou e aprendeu, com a versão da regra que produziu cada linha. A confiança, os níveis e as propostas são recalculáveis a partir dele.</p>
+  <table><thead><tr><th>Hora</th><th>Quem</th><th>Ação</th><th>Time</th><th>Item</th><th>O que fez</th><th>Resultado</th><th>Nível</th></tr></thead><tbody>
+  ${LOG.map(l => `<tr><td class="mudo">${l[0]}</td><td><b>${l[1]}</b></td><td>${l[2]}</td><td>${l[3]}</td><td>${l[4]}</td><td>${esc(l[5])}</td><td class="${/erro/.test(l[6]) ? "feito nao" : ""}">${l[6]}</td><td>${NIVEIS[l[7]] ? nivelTag(l[7]) : "—"}</td></tr>`).join("")}
+  </tbody></table>`;
+}
+function ladoLog() {
+  return `<h3>O que o log guarda</h3>
+  <dl class="kv"><dt>Foto do antes</dt><dd>só os campos que a regra leu, para desfazer e para o replay</dd><dt>Decisões</dt><dd>cada Liberar e Reprovar vira um caso de teste das versões futuras</dd><dt>Versão</dt><dd>regra, atmosfera e modelo de mensagem, sempre versionados</dd><dt>Retenção</dt><dd>definida pelo cliente, com pseudonimização (LGPD)</dd></dl>
+  <h3>Pergunte ao log</h3>
+  <p class="sub">Pelo conector, na sua IA: “o que o Jirafalis fez no time Mobile esta semana?” A IA resume; o log é a fonte.</p>`;
+}
+
+// ---------- Origem das mudanças e skills ----------
+const ORIGEM = [["Pagamentos", 38, 30, 14, 8, 10], ["Onboarding", 52, 22, 10, 6, 10], ["Plataforma", 25, 28, 30, 9, 8], ["Checkout", 41, 27, 12, 10, 10], ["Antifraude", 47, 25, 8, 9, 11], ["Mobile", 33, 35, 15, 7, 10], ["Dados", 29, 31, 22, 8, 10], ["Parcerias", 55, 20, 6, 9, 10], ["Suporte interno", 61, 14, 4, 11, 10]];
+const CORES_OR = ["#d9cdb8", "#e8b456", "#f2a38a", "#8fb6dc", "#a5d36c"];
+function skills() {
+  return `<h2>Origem, causas e skills</h2>
+  <p class="sub">Pelo conector da IA, o agente escreve com a conta da pessoa, e o histórico diz “Fulano moveu”. Aqui o gestor vê, por time, de quem é a causa das falhas, quem escreve os tickets, se alguém confere o que a IA escreve e se os dados chegam. Na dúvida, “indefinido”.</p>
+  ${JF.secoes()}
+  <h3>Quem mexe no quadro (últimos 14 dias)</h3>
+  <div class="leg-origem">${["humano", "IA provável", "IA confirmada (marcador da skill)", "automação", "Jirafalis"].map((n, i) => `<span><i style="background:${CORES_OR[i]}"></i>${n}</span>`).join("")}</div>
+  <table><tbody>${ORIGEM.map(([t, ...v]) => `<tr><td style="width:120px">${t}</td><td><div class="pilha">${v.map((x, i) => `<i style="width:${x}%;background:${CORES_OR[i]}" title="${x}%"></i>`).join("")}</div></td><td class="num mudo" style="width:70px">${v[1] + v[2]}% IA</td></tr>`).join("")}</tbody></table>
+  <h3>O erro volta para a skill que o gerou</h3>
+  <div class="cartao">
+    <div class="linha1"><b>skill <code>abrir-pr</code> v1.4</b><span class="tag">3 times</span><span class="tag" style="margin-left:auto">nível júnior: uma pessoa abre o PR</span></div>
+    <div class="evid">Move o item para Em testes sem o link do PR em 9 de 31 casos (Checkout, Mobile, Dados). A regra que deixou de ser cumprida: 16 / evidência de PR.</div>
+    <b style="font:650 13px 'Bricolage Grotesque'">Para o time</b>
+    <div class="evid">“O link faltou por causa da skill <code>abrir-pr</code>, não por você. Enquanto ela não é corrigida, confira o link do PR no card ao pedir o teste.”</div>
+    <b style="font:650 13px 'Bricolage Grotesque'">Para o dono da skill: proposta de mudança</b>
+    <div class="diff"><span>  ## Ao terminar</span>
+<span class="mais">+ Antes de mover o item para "Em testes", cole o link do PR no campo "Link do PR".</span>
+<span class="mais">+ Grave o marcador jirafalis.origem no card, com a versão e a revisão do dev.</span></div>
+    <div class="botoes"><button class="btn forte" id="gerar-pr">Gerar o PR com a documentação</button><span class="apagado" style="font-size:12px">O Jirafalis nunca publica skill sozinho: o merge é humano.</span></div>
+  </div>
+  <h3>Mediu se melhorou?</h3>
+  <table><thead><tr><th>Skill</th><th>Versão</th><th class="num">Usos</th><th class="num">Erro de processo</th><th class="num">Cobranças evitadas</th></tr></thead><tbody>
+    <tr><td><code>abrir-pr</code></td><td>v1.3 → v1.4</td><td class="num">31</td><td class="num feito nao">12% → 29%</td><td class="num">—</td></tr>
+    <tr><td><code>criar-historias</code></td><td>v2.1</td><td class="num">58</td><td class="num">3%</td><td class="num">14</td></tr>
+    <tr><td><code>quebrar-epico</code></td><td>v1.0</td><td class="num">12</td><td class="num">8%</td><td class="num">5</td></tr>
+    <tr><td><code>registrar-deploy</code></td><td>v1.2</td><td class="num">0</td><td class="num mudo">sem uso</td><td class="num">—</td></tr>
+  </tbody></table>`;
+}
+function ladoSkills() {
+  return `${JF.lado()}<h3>Como o cérebro de origem decide</h3>
+  <dl class="kv"><dt>Canal (certeza)</dt><dd>marcador da skill, evento de MCP na auditoria, conta de bot, automação, assinatura do Jirafalis</dd><dt>Ritmo</dt><dd>descrição e 6 filhos criados em 2 minutos; rajada de edições; volume fora do padrão da própria pessoa</dd><dt>Conteúdo</dt><dd>estrutura em markdown, seções-padrão, o mesmo molde em vários itens</dd></dl>
+  <h3>Princípios</h3>
+  <div class="travas"><div>Compara a pessoa com ela mesma, não com os outros</div><div>Precisão antes de cobertura: na dúvida, “indefinido”</div><div>O marcador ensina o cérebro: cada ação marcada é um exemplo rotulado</div><div>Sem ranking de pessoas; a crítica vai primeiro para o próprio dev</div></div>
+  <h3>Marcador das skills oficiais</h3>
+  <div class="dsl">${esc(JF.marcador)}</div>
+  <p class="sub" style="margin-top:6px">Uma propriedade invisível que a skill grava no card pelo próprio MCP. Dá a origem certa, a versão e se o dev revisou, para comparar a taxa de erro antes e depois. Sem texto do card.</p>`;
+}
+
+// ---------- Montagem ----------
+const ABAS = [["regras", "Fichas das regras", () => REGRAS.length], ["nova", "Nova regra"], ["cerebro", "Cérebro", () => PROPOSTAS.filter(p => !S.propostas[p.id]).length], ["skills", "Origem, causas e skills"]];
+function render() {
+  $("#abas").innerHTML = ABAS.map(([k, n, c]) => `<button class="aba" role="tab" aria-selected="${S.aba === k}" data-aba="${k}">${n}${c ? `<span class="n">${c()}</span>` : ""}</button>`).join("") +
+    `<span class="legenda-niveis">${nivelTag("junior")} propõe ${nivelTag("pleno")} faz e conta ${nivelTag("senior")} faz sozinho ${nivelTag("sim")} só mostra</span>`;
+  $("#estado-topo").innerHTML = S.pausa ? `<span class="ponto-vivo pausa"></span> Pausa geral: nada é gravado` : `<span class="ponto-vivo"></span> Lendo a cada 30 min · próxima gravação 14:00`;
+  const m = { fila: [fila, ladoFila], regras: [listaRegras, () => ficha(S.regra)], nova: [nova, ladoNova], cerebro: [cerebro, ladoCerebro], log: [log, ladoLog], skills: [skills, ladoSkills] }[S.aba];
+  $("#principal").innerHTML = m[0](); $("#lado").innerHTML = m[1]();
+}
+document.addEventListener("click", e => {
+  const t = e.target.closest("button"); if (!t) return; const d = t.dataset;
+  if (d.aba) { S.aba = d.aba; history.replaceState(null, "", "#" + d.aba); }
+  else if (d.ir) { if (d.ir === "log") { location.href = "mesa.html#log"; return; } S.aba = d.ir; }
+  else if (d.lib) { S.decisoes[d.lib] = { ok: true }; S.liberadas++; toast("Liberado. Conta como acerto para a ação; grava às 14:00 com as travas."); }
+  else if (d.edit) { S.decisoes[d.edit] = { ok: true, editado: true }; S.liberadas++; toast("Editado e liberado: conta meio erro. Edições repetidas viram proposta de melhoria."); }
+  else if (d.rep) { S.decisoes[d.rep] = { ok: false, motivo: d.mot }; toast(`Reprovado (${d.mot}). O motivo é o sinal mais valioso para o cérebro.`); }
+  else if (d.desfazDec) { const x = S.decisoes[d.desfazDec]; if (x?.ok) S.liberadas--; delete S.decisoes[d.desfazDec]; }
+  else if (d.apr) { const txt = $("#txt-" + d.apr).value, orig = RASCUNHOS.find(r => r.id === d.apr).texto; S.rascunhos[d.apr] = { ok: true, texto: txt, editado: txt !== orig }; toast("Enviado ao chat do time. O ensaio conta para a ação de mensagem."); }
+  else if (d.desc) { S.rascunhos[d.desc] = { ok: false, texto: RASCUNHOS.find(r => r.id === d.desc).texto }; }
+  else if (d.desfaz) { S.eufiz[d.desfaz] = true; toast("Desfeito pela foto do antes. Desfazer é erro cheio: a ação voltou a júnior."); }
+  else if (d.abreRegra || d.regra) { S.regra = d.abreRegra || d.regra; S.aba = "regras"; }
+  else if (d.simRegra) { toast(`${d.simRegra}: simulação na foto de hoje rodou sem gravar nada.`); }
+  else if (d.modo) { S.modoNova = d.modo; }
+  else if (d.padrao) { S.padrao = d.padrao; S.params = paramsPadrao(d.padrao); S.simulou = false; }
+  else if (d.prop) { S.propostas[d.prop] = d.res; toast(d.res === "aprovada" ? "Aprovada. O replay já provou que nenhuma decisão antiga muda." : d.res === "recusada" ? "Recusada. Diga o motivo na próxima: ele ensina o analista." : "Adiada por 7 dias."); }
+  else if (t.id === "simular") { S.simulou = true; }
+  else if (t.id === "salvar") { S.criadas++; const cod = S.modoNova === "ia" ? "PR-10" : S.padrao; toast(`Regra ${55 + S.criadas} v1 salva: ${PADROES[cod][0]} · Simulação · júnior.`); }
+  else if (t.id === "abrir-painel") { S.modoNova = "painel"; S.padrao = "PR-10"; S.params = { "Ao entrar em": "Em testes", "Campo exigido": "Responsável de testes", "O que fazer": "aviso no chat do time", "Avisar quem": "líder do time" }; S.simulou = true; }
+  else if (t.id === "chat-prox") { S.chatPasso = Math.min(S.chatPasso + 1, CHAT.length - 1); }
+  else if (t.id === "chat-zera") { S.chatPasso = 0; }
+  else if (t.id === "gravar") { toast(`Releu os itens e gravou ${S.liberadas} liberada(s) + as ações de pleno. Foto do antes guardada.`); S.liberadas = 0; Object.values(S.decisoes).forEach(x => x.ok && (x.gravado = true)); }
+  else if (t.id === "pausa") { S.pausa = !S.pausa; }
+  else if (t.id === "ver-tarja") { $("#tarja").classList.add("on"); }
+  else if (t.id === "tarja-vista") { $("#tarja").classList.remove("on"); return; }
+  else if (t.id === "gerar-pr") { toast("PR em rascunho no repositório das skills: mudança, motivo, 9 itens de prova. O dono aprova."); }
+  else return;
+  render();
+  if (t.id === "chat-prox") $("#principal").scrollTop = 1e6;
+});
+document.addEventListener("change", e => { const p = e.target.dataset.param; if (p && e.target.tagName === "SELECT") { S.params[p] = e.target.type === "number" ? +e.target.value : e.target.value; S.simulou = false; $("#lado").innerHTML = ladoNova(); } });
+document.addEventListener("input", e => { const p = e.target.dataset.param; if (p && e.target.tagName === "INPUT") { S.params[p] = e.target.type === "number" ? +e.target.value : e.target.value; S.simulou = false; $("#lado").innerHTML = ladoNova(); } });
+const h = location.hash.slice(1);
+if (ABAS.some(a => a[0] === h)) S.aba = h;
+if (h === "ia") { S.aba = "nova"; S.modoNova = "ia"; S.chatPasso = CHAT.length - 1; }
+if (h === "tarja") { S.aba = "cerebro"; document.getElementById("tarja").classList.add("on"); }
+render();
+</script>
+</body>
+</html>

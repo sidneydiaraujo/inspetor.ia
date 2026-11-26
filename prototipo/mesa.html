@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inspetor Jirafalis · Mesa do dia</title>
+<!-- Inspetor Jirafalis · protótipo de interface. Dados fictícios. © Sidney de Araújo Silva. -->
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap");
+:root { --chao: #17120c; --raia: #211a12; --alto: #2c2319; --linha: #3a2e21; --ink: #f3e9da; --mudo: #b2a28b; --apagado: #7a6c5a;
+  --ambar: #e8b456; --ambar-escuro: #b8862e; --acacia: #a5d36c; --perigo: #f2a38a; --ceu-azul: #8fb6dc; --sobre-cor: #241805;
+  --mud: #8fb6dc; --com: #e8b456; --cam: #6cc4b2; --sombra: 0 18px 48px rgba(0,0,0,.5); color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--chao); color: var(--ink); font: 14px/1.4 "Atkinson Hyperlegible", "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--ambar); outline-offset: 2px; }
+.tela { height: 100vh; display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; gap: 8px; padding: 8px 10px; }
+/* topo */
+.topo { display: grid; grid-template-columns: auto minmax(260px, 1fr) auto auto; gap: 14px; align-items: center; background: var(--raia); border-radius: 20px; padding: 6px 12px 6px 6px; }
+.marca { display: flex; gap: 10px; align-items: center; border: 0; background: none; text-align: left; padding: 2px 6px 2px 2px; border-radius: 14px; }
+.marca:hover { background: var(--alto); }
+.marca svg { width: 44px; height: 44px; }
+.marca h1 { font: 700 20px/1 "Bricolage Grotesque", sans-serif; margin: 0; letter-spacing: -.02em; } .marca h1 span { color: var(--ambar); }
+.marca small { color: var(--mudo); font-size: 12.5px; }
+.ronda svg { width: 100%; height: 50px; display: block; cursor: crosshair; overflow: visible; }
+.ronda .ponto { cursor: pointer; }
+.disco { display: flex; gap: 8px; align-items: center; border: 1px solid var(--linha); background: var(--alto); border-radius: 14px; padding: 4px 12px 4px 6px; }
+.disco svg { width: 38px; height: 38px; } .disco b { display: block; font: 650 13px "Bricolage Grotesque"; } .disco small { color: var(--mudo); font-size: 11.5px; }
+.disco .trilho { fill: none; stroke: var(--linha); stroke-width: 4; } .disco .arco { fill: none; stroke-width: 4; stroke-linecap: round; }
+.disco text { fill: var(--ink); font: 700 10px "Bricolage Grotesque"; }
+.comandos { display: flex; gap: 8px; align-items: center; }
+.agenda { display: flex; gap: 6px; align-items: center; color: var(--mudo); font-size: 12.5px; }
+.agenda input[type=time] { background: transparent; border: 0; color: var(--ink); font: 700 15px "Bricolage Grotesque"; width: 86px; }
+.switch { position: relative; width: 38px; height: 22px; display: inline-block; } .switch input { opacity: 0; width: 0; height: 0; }
+.switch i { position: absolute; inset: 0; background: var(--linha); border-radius: 99px; transition: .15s; cursor: pointer; }
+.switch i::before { content: ""; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--ink); transition: .15s; }
+.switch input:checked + i { background: var(--acacia); } .switch input:checked + i::before { transform: translateX(16px); background: var(--sobre-cor); }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--linha); background: var(--alto); border-radius: 12px; padding: 7px 12px; font-size: 13.5px; white-space: nowrap; text-decoration: none; }
+.btn:hover { border-color: var(--apagado); }
+.btn.forte { background: var(--ambar); border-color: var(--ambar); color: var(--sobre-cor); font-weight: 700; }
+.btn.investigar { border-color: rgba(143,182,220,.5); color: var(--ceu-azul); }
+.btn.mini { padding: 4px 9px; font-size: 12px; border-radius: 10px; }
+.btn.alerta { border-color: rgba(242,163,138,.55); color: var(--perigo); }
+.btn.sel { border-color: var(--ambar); color: var(--ambar); }
+.telas { display: flex; gap: 2px; margin: -4px 0 -4px 8px; } .telas a { font-size: 11.5px; color: var(--mudo); text-decoration: none; padding: 1px 8px; border-radius: 99px; } .telas a:hover { color: var(--ink); } .telas a[aria-current] { color: var(--ambar); font-weight: 700; }
+/* avisos e tarja */
+#avisos:empty { display: none; } #avisos { display: grid; gap: 6px; }
+.aviso { display: flex; gap: 10px; align-items: center; background: rgba(232,180,86,.08); border: 1px solid rgba(232,180,86,.35); color: var(--ink); border-radius: 12px; padding: 7px 12px; font-size: 13px; }
+.aviso::before { content: "▲"; color: var(--ambar); font-size: 11px; }
+.tarja { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; background: rgba(242,163,138,.1); border: 1px solid rgba(242,163,138,.6); border-left: 6px solid var(--perigo); border-radius: 12px; padding: 8px 12px; }
+.tarja b { color: var(--perigo); font: 700 14px "Bricolage Grotesque"; } .tarja small { display: block; color: var(--mudo); font-size: 12.5px; }
+/* corpo */
+.corpo { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 8px; min-height: 0; }
+.corpo.sem-mapa { grid-template-columns: minmax(0, 1fr); } .corpo.sem-mapa .gaveta { display: none; }
+.gaveta { background: var(--raia); border-radius: 20px; display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+.gaveta-topo { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 8px; }
+.gaveta-topo h2 { font: 700 16px "Bricolage Grotesque"; margin: 0; }
+.gaveta-corpo { overflow: auto; padding: 0 12px 14px; display: grid; gap: 14px; align-content: start; scrollbar-width: thin; scrollbar-color: var(--linha) transparent; }
+.gaveta h3 { font: 650 13px "Bricolage Grotesque"; color: var(--mudo); margin: 0 0 7px; }
+.entrada { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; background: var(--alto); border: 1px solid var(--linha); border-radius: 14px; padding: 10px 12px; }
+.entrada:hover { border-color: var(--apagado); } .entrada b { font: 650 14px "Bricolage Grotesque"; display: block; } .entrada small { color: var(--ambar); font-size: 12px; }
+.entrada .ic { color: var(--acacia); } .entrada .seta { margin-left: auto; color: var(--apagado); }
+.manchas { display: flex; flex-wrap: wrap; gap: 6px; }
+.mancha { flex: 1 1 calc(var(--peso) * 9px + 70px); min-height: 58px; text-align: left; border: 0; background: var(--cor); color: var(--sobre-cor); border-radius: var(--forma); padding: 7px 10px; display: grid; align-content: start; }
+.mancha b { font: 700 19px/1 "Bricolage Grotesque"; } .mancha span { font-size: 11px; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.mancha.feita { opacity: .45; } .mancha:hover { filter: brightness(1.08); }
+.fichas { display: grid; gap: 6px; }
+.ficha { background: var(--alto); border-radius: 12px; padding: 8px 10px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; font-size: 12.5px; }
+.ficha .t b { font-weight: 650; font-size: 12.5px; } .ficha .det { color: var(--mudo); font-size: 11.5px; }
+.ficha .barra { grid-column: 1 / -1; height: 5px; background: var(--linha); border-radius: 3px; overflow: hidden; } .ficha .barra i { display: block; height: 100%; background: var(--ceu-azul); }
+.ficha.pleno .barra i { background: var(--ambar); } .ficha.senior .barra i { background: var(--acacia); } .ficha.pronta { outline: 1px solid var(--acacia); }
+.cod { font: 700 11.5px "Bricolage Grotesque"; border-radius: 7px; padding: 1px 7px; background: var(--linha); color: var(--ink); white-space: nowrap; }
+.nivel { font-size: 10.5px; font-weight: 700; padding: 1px 8px; border-radius: 99px; white-space: nowrap; }
+.nivel.junior { background: rgba(143,182,220,.16); color: var(--ceu-azul); } .nivel.pleno { background: rgba(232,180,86,.2); color: var(--ambar); }
+.nivel.senior { background: rgba(165,211,108,.16); color: var(--acacia); } .nivel.sim { border: 1px dashed var(--apagado); color: var(--mudo); }
+.risco { font-size: 10px; font-weight: 700; color: var(--mudo); border: 1px solid var(--linha); border-radius: 6px; padding: 0 4px; }
+.link-apoio { display: flex; justify-content: space-between; align-items: center; color: var(--ambar); text-decoration: none; font-size: 13px; background: rgba(232,180,86,.07); border: 1px solid rgba(232,180,86,.3); border-radius: 12px; padding: 8px 11px; }
+/* mesa e raias */
+.mesa { display: grid; grid-template-columns: var(--colunas, 1fr 1.4fr 1fr); gap: 8px; min-height: 0; }
+.raia { background: var(--raia); border-radius: 20px; border-top: 3px solid var(--cor); display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+.raia-topo { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; padding: 12px 14px 8px; align-items: start; }
+.raia-topo .n { font: 700 34px/1 "Bricolage Grotesque"; color: var(--cor); min-width: 30px; }
+.raia-topo h2 { font: 700 16px "Bricolage Grotesque"; margin: 0; } .raia-topo p { margin: 2px 0 0; color: var(--mudo); font-size: 12px; }
+.raia-corpo { overflow: auto; padding: 0 10px 12px; scrollbar-width: thin; scrollbar-color: var(--linha) transparent; }
+.divisa { font: 700 12px "Bricolage Grotesque"; color: var(--mudo); text-transform: uppercase; letter-spacing: .04em; margin: 10px 4px 4px; }
+.divisa.prio { color: var(--perigo); }
+.grupo { border-radius: 12px; margin-bottom: 2px; } .grupo.prio { border-left: 3px solid var(--perigo); background: rgba(242,163,138,.035); }
+.grupo.pisca { animation: pisca 1.2s; } @keyframes pisca { 0%, 60% { background: rgba(232,180,86,.15); } }
+.grupo-cab { display: flex; gap: 7px; align-items: center; padding: 7px 6px; border-radius: 10px; cursor: pointer; font-size: 13px; }
+.grupo-cab:hover { background: var(--alto); }
+.grupo-cab .seta { color: var(--apagado); transition: transform .15s; } .grupo.fechado .seta { transform: rotate(-90deg); } .grupo.fechado .linhas { display: none; }
+.grupo-cab .cod { background: color-mix(in srgb, var(--cor) 22%, transparent); color: var(--cor); }
+.grupo-cab .nome { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.grupo-cab .qt { color: var(--mudo); font-size: 12px; white-space: nowrap; } .grupo-cab .dir { margin-left: auto; display: flex; gap: 4px; flex: none; }
+.selo-pleno { color: var(--ambar); font-size: 11.5px; font-weight: 700; }
+.linhas { display: grid; gap: 4px; padding: 0 0 6px 18px; }
+.linha { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; background: var(--alto); border-radius: 10px; padding: 7px 8px; font-size: 13px; }
+.linha.liberado { box-shadow: inset 3px 0 0 var(--acacia); } .linha.suspenso { opacity: .7; } .linha.feito { opacity: .6; }
+.linha .t { min-width: 0; } .linha .t > div:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.linha .det { color: var(--mudo); font-size: 12px; }
+.k { font: 700 12.5px "Bricolage Grotesque"; color: var(--ambar); background: none; border: 0; padding: 0; text-align: left; text-decoration: underline dotted; text-underline-offset: 3px; }
+.k:hover { color: var(--ink); }
+.valor { display: inline-flex; gap: 5px; align-items: center; flex-wrap: wrap; } .valor span { white-space: nowrap; } .valor .de { text-decoration: line-through; color: var(--apagado); } .valor .para { color: var(--ink); font-weight: 700; }
+.acoes { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.ico { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; border: 1px solid var(--linha); background: transparent; font-size: 14px; }
+.ico:hover { border-color: var(--apagado); } .ico.sim.on { background: var(--acacia); color: var(--sobre-cor); border-color: var(--acacia); }
+.ico.nao.on { background: var(--perigo); color: var(--sobre-cor); border-color: var(--perigo); }
+.carimbo { font-size: 11.5px; font-weight: 700; color: var(--acacia); display: inline-flex; gap: 4px; align-items: center; white-space: nowrap; }
+.carimbo.eufaco { color: var(--ambar); }
+.desvio { font-size: 10.5px; font-weight: 700; border-radius: 99px; padding: 0 6px; margin-right: 5px; background: var(--linha); color: var(--mudo); }
+.desvio.medio { background: rgba(232,180,86,.22); color: var(--ambar); } .desvio.velho { background: rgba(242,163,138,.22); color: var(--perigo); }
+.rostos { display: flex; } .rosto { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font: 700 10px "Bricolage Grotesque"; color: var(--sobre-cor); margin-left: -5px; border: 2px solid var(--alto); }
+.semretorno { color: var(--perigo); font-weight: 700; } .respondido { color: var(--ambar); font-weight: 700; }
+.chat-btn { font-size: 11.5px; font-weight: 700; border-radius: 99px; padding: 3px 9px; border: 1px solid rgba(165,211,108,.5); color: var(--acacia); background: transparent; white-space: nowrap; }
+.chat-btn.feito { border-style: dashed; }
+.motivos { grid-column: 2 / -1; display: flex; gap: 4px; flex-wrap: wrap; align-items: center; font-size: 11.5px; color: var(--mudo); }
+.motivos button { font-size: 11.5px; border: 1px solid var(--linha); background: transparent; border-radius: 99px; padding: 1px 8px; color: var(--mudo); }
+.motivos button:hover, .motivos button.on { border-color: var(--perigo); color: var(--perigo); }
+.campo-pre { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.campo-pre input[type=date] { background: var(--chao); border: 1px solid var(--linha); border-radius: 8px; padding: 3px 6px; font-size: 12.5px; }
+.pilula { font-size: 12px; border: 1px solid var(--linha); border-radius: 99px; padding: 2px 9px; cursor: pointer; display: inline-flex; gap: 4px; align-items: center; }
+.pilula:has(input:checked) { border-color: var(--cam); color: var(--cam); font-weight: 700; } .pilula input { display: none; }
+.linha.dupla { grid-template-columns: 52px minmax(0, 1fr) auto; }
+.linha.dupla .campo-pre { grid-column: 2 / 3; grid-row: 2; }
+.linha.dupla .acoes { grid-column: 3; grid-row: 1 / span 2; }
+.linha.dupla > .k { grid-row: 1 / span 2; }
+.gs { display: grid; gap: 3px; padding: 4px 2px 8px 18px; font-size: 12.5px; } .gs b { font: 650 12.5px "Bricolage Grotesque"; margin-top: 6px; } .gs span { color: var(--mudo); }
+.vazio { color: var(--apagado); text-align: center; padding: 18px; font-size: 13px; } .vazio b { display: block; color: var(--mudo); }
+/* rodapé */
+.rodape { display: flex; gap: 8px; align-items: center; background: var(--raia); border-radius: 16px; padding: 6px 10px; font-size: 12.5px; color: var(--mudo); flex-wrap: wrap; }
+.selinhos { display: flex; gap: 4px; flex-wrap: wrap; }
+.selinho { display: inline-flex; gap: 4px; align-items: center; border: 1px solid var(--linha); border-radius: 99px; padding: 1px 8px; font-size: 11.5px; color: var(--ink); }
+.selinho i { width: 7px; height: 7px; border-radius: 50%; background: var(--acacia); } .selinho.tem i { background: var(--ambar); } .selinho.sim { border-style: dashed; color: var(--mudo); } .selinho.sim i { background: transparent; border: 1px solid var(--mudo); }
+.selinho.off { opacity: .45; text-decoration: line-through; }
+.rodape .dir { margin-left: auto; display: flex; gap: 5px; flex-wrap: wrap; }
+/* janelas */
+.fundo { position: fixed; inset: 0; background: rgba(10,7,4,.6); z-index: 20; display: none; } .fundo.on { display: block; }
+.janela { position: fixed; z-index: 21; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(880px, calc(100vw - 32px)); max-height: calc(100vh - 60px); background: var(--chao); border: 1px solid var(--linha); border-radius: 20px; box-shadow: var(--sombra); display: none; grid-template-rows: auto minmax(0, 1fr); }
+.janela.on { display: grid; }
+.j-cab { display: flex; gap: 12px; align-items: flex-start; padding: 16px 18px 10px; border-bottom: 1px solid var(--linha); }
+.j-cab h2 { font: 700 19px "Bricolage Grotesque"; margin: 0 0 4px; } .j-cab p { margin: 0 0 4px; color: var(--mudo); font-size: 13px; } .j-cab .ico { margin-left: auto; flex: none; }
+.j-corpo { overflow: auto; padding: 12px 18px 18px; scrollbar-width: thin; scrollbar-color: var(--linha) transparent; }
+.j-corpo h3 { font: 650 13px "Bricolage Grotesque"; color: var(--mudo); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .04em; } .j-corpo h3:first-child { margin-top: 0; }
+.cartao { background: var(--raia); border-radius: 12px; padding: 9px 12px; margin-bottom: 6px; font-size: 13px; display: grid; gap: 4px; }
+.cartao .topo-c { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .cartao .topo-c b { font-weight: 650; }
+.cartao small { color: var(--mudo); }
+.chip { font-size: 11.5px; border-radius: 99px; padding: 1px 8px; border: 1px solid var(--linha); color: var(--mudo); display: inline-flex; gap: 3px; }
+.chip.ok { color: var(--acacia); border-color: rgba(165,211,108,.4); } .chip.falha { color: var(--perigo); border-color: rgba(242,163,138,.45); }
+.g { display: inline-block; width: 9px; height: 9px; border-radius: 50%; } .g.critico { background: var(--perigo); } .g.urgente { background: var(--ambar); } .g.atencao { background: var(--ceu-azul); }
+.grade-times { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.time-nota { background: var(--raia); border-radius: 14px; padding: 10px; display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 12.5px; }
+.time-nota svg { width: 54px; height: 54px; } .time-nota b { font: 650 14px "Bricolage Grotesque"; display: block; } .time-nota small { color: var(--mudo); grid-column: 1 / -1; }
+.busca { width: min(380px, 100%); background: var(--raia); border: 1px solid var(--linha); border-radius: 10px; padding: 6px 10px; font-size: 13px; margin-top: 6px; }
+.pm { background: var(--raia); border-radius: 12px; padding: 8px 12px; margin-bottom: 6px; font-size: 13px; }
+.pm-topo { display: flex; gap: 10px; align-items: center; } .pm-topo .nome { flex: 1; min-width: 0; } .pm-topo .nome b { font-weight: 650; } .pm-topo .nome small { display: block; color: var(--mudo); font-size: 12px; }
+.pm.desligada .nome b { color: var(--apagado); } .pm.desligada .nome small { color: var(--ambar); }
+.pm-texto { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--linha); color: var(--mudo); font-size: 12.5px; display: none; } .pm.aberta .pm-texto { display: block; }
+.lg { display: grid; grid-template-columns: 46px 40px minmax(0, 1fr); gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(58,46,33,.6); font-size: 12.5px; }
+.lg .h { color: var(--mudo); } .lg small { display: block; color: var(--mudo); }
+.r-feito { color: var(--acacia); } .r-pulado { color: var(--ambar); } .r-erro { color: var(--perigo); }
+.exec { display: flex; gap: 8px; align-items: center; margin: 12px 0 4px; } .exec b { font: 650 13px "Bricolage Grotesque"; }
+.tm { background: var(--raia); border-radius: 12px; padding: 9px 12px; margin-bottom: 6px; display: grid; grid-template-columns: auto minmax(0, 1fr) 150px 170px; gap: 10px; align-items: center; font-size: 13px; }
+.tm select { background: var(--chao); border: 1px solid var(--linha); border-radius: 8px; padding: 3px 6px; font-size: 12.5px; width: 100%; }
+#toasts { position: fixed; right: 14px; bottom: 60px; display: grid; gap: 6px; z-index: 30; }
+.toast { background: var(--ink); color: var(--chao); padding: 9px 13px; border-radius: 12px; font-size: 13px; box-shadow: var(--sombra); max-width: 420px; }
+.confirmar { position: fixed; z-index: 40; inset: 0; display: none; place-items: center; background: rgba(10,7,4,.6); } .confirmar.on { display: grid; }
+.confirmar > div { background: var(--chao); border: 1px solid var(--linha); border-radius: 18px; padding: 18px 20px; width: min(460px, calc(100vw - 32px)); box-shadow: var(--sombra); }
+.confirmar h3 { font: 700 17px "Bricolage Grotesque"; margin: 0 0 6px; } .confirmar p { color: var(--mudo); margin: 0 0 8px; white-space: pre-line; } .confirmar ul { margin: 0 0 12px; padding-left: 18px; font-size: 13px; color: var(--ink); max-height: 200px; overflow: auto; }
+.confirmar .botoes { display: flex; gap: 8px; justify-content: flex-end; }
+@media (min-width: 1301px) { html, body { overflow: hidden; } }
+@media (max-width: 1300px) { .corpo { grid-template-columns: minmax(0, 1fr); } .gaveta { display: none; } .corpo.com-mapa .gaveta { display: grid; } .mesa { grid-template-columns: 1fr; } .tela { height: auto; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="tela">
+  <nav class="telas" aria-label="Telas do protótipo"><a href="mesa.html" aria-current="page">Mesa do dia</a><a href="escala.html">Investigar</a><a href="regras.html">Regras e cérebro</a><a href="onboarding.html">Onboarding</a><a href="../index.html">Apresentação</a></nav>
+  <header class="topo">
+    <button class="marca" id="marca" aria-controls="gaveta" title="Mapa das regras (tecla M)">
+      <svg aria-hidden="true" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#d9a13b"/><path d="M18 64V41q0-8 8-9h4v32z" fill="#fff1d2"/><circle cx="22" cy="45" r="2.3" fill="#b06f1c"/><circle cx="26.5" cy="52" r="1.9" fill="#b06f1c"/><path d="M7 64l11-14 4 14z" fill="#3a2812"/><path d="M41 64L30 50l-4 14z" fill="#3a2812"/><path d="M23 34c0-7 5-11 12-11h7c6 0 10 3 10 7s-4 7-10 7H30c-4 0-7-1-7-3z" fill="#fff1d2"/><circle cx="49" cy="29.5" r="1" fill="#3a2812"/><circle cx="38" cy="29" r="2.1" fill="#3a2812"/><path d="M31 13.5V9M37 13.5V9" stroke="#fff1d2" stroke-width="2" stroke-linecap="round"/><circle cx="31" cy="8.5" r="1.8" fill="#3a2812"/><circle cx="37" cy="8.5" r="1.8" fill="#3a2812"/><path d="M28 23v-7q0-3 3-3h6q3 0 3 3v7z" fill="#3a2812"/><rect x="28" y="19.2" width="12" height="2.4" fill="#d9a13b"/><ellipse cx="34" cy="23.2" rx="12.5" ry="2.3" fill="#3a2812"/></svg>
+      <div><h1>Inspetor <span>Jirafalis</span></h1><small id="sub"></small></div>
+    </button>
+    <div class="ronda" id="ronda" title="Clique na linha para criar um ponto de gravação; clique no losango para tirar."></div>
+    <button class="disco" id="disco" title="Saúde do que está escrito nos campos"></button>
+    <div class="comandos">
+      <div class="agenda"><label class="switch" title="Gravação sozinha: grava as liberadas em cada ponto da linha do tempo"><input type="checkbox" id="ag-ativo" checked><i></i></label>
+        <span>lê das</span><input type="time" id="ag-ini" value="08:00"><span>às</span><input type="time" id="ag-fim" value="19:00"></div>
+      <a class="btn investigar" href="escala.html" title="Olhar a fundo onde está travando: todos os times, cada time, cada caso">◎ Investigar</a>
+      <button class="btn" id="ler">↻ Ler agora</button>
+      <button class="btn forte" id="gravar">➤ Gravar liberadas</button>
+    </div>
+  </header>
+  <div id="avisos"></div>
+  <div class="corpo" id="corpo">
+    <aside class="gaveta" id="gaveta" aria-label="Mapa das regras">
+      <div class="gaveta-topo"><h2>Mapa das regras</h2><button class="ico" id="fechar-mapa" title="Fechar o mapa (M)">⟨</button></div>
+      <div class="gaveta-corpo" id="mapa"></div>
+    </aside>
+    <main class="mesa" id="mesa">
+      <section class="raia" id="raia-mud" style="--cor:var(--mud)"></section>
+      <section class="raia" id="raia-com" style="--cor:var(--com)"></section>
+      <section class="raia" id="raia-cam" style="--cor:var(--cam)"></section>
+    </main>
+  </div>
+  <footer class="rodape" id="rodape"></footer>
+</div>
+<div class="fundo" id="fundo"></div>
+<section class="janela" id="janela" role="dialog" aria-modal="true"></section>
+<div class="confirmar" id="confirmar"><div></div></div>
+<div id="toasts" aria-live="polite"></div>
+<script src="mesa-dados.js"></script>
+<script src="mesa.js"></script>
+</body>
+</html>

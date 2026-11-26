@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jirafalis · Ligar na sua IA e fazer o onboarding</title>
+<!-- Inspetor Jirafalis · protótipo de interface. Dados fictícios. © Sidney de Araújo Silva. -->
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap");
+:root { --chao: #17120c; --raia: #211a12; --alto: #2c2319; --linha: #3a2e21; --ink: #f3e9da; --mudo: #b2a28b; --apagado: #7a6c5a;
+  --ambar: #e8b456; --acacia: #a5d36c; --perigo: #f2a38a; --fio: #e06c4f; --ceu-azul: #8fb6dc; --sobre-cor: #241805; --sombra: 0 18px 48px rgba(0,0,0,.45); color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--chao); color: var(--ink); font: 14px/1.45 "Atkinson Hyperlegible", "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--ambar); outline-offset: 2px; }
+.tela { height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; padding: 10px 12px; }
+.topo { display: flex; gap: 14px; align-items: center; padding: 6px 14px 6px 6px; border-radius: 20px; background: var(--raia); min-height: 58px; }
+.marca { display: flex; gap: 10px; align-items: center; }
+.marca svg { width: 40px; height: 40px; }
+.marca h1 { font: 700 19px/1 "Bricolage Grotesque", sans-serif; margin: 0; letter-spacing: -.02em; } .marca h1 span { color: var(--ambar); }
+.marca small { color: var(--mudo); font-size: 12.5px; }
+.telas { display: flex; gap: 4px; margin-left: 14px; flex-wrap: wrap; } .telas a { font-size: 12.5px; color: var(--mudo); padding: 4px 10px; border-radius: 99px; border: 1px solid transparent; text-decoration: none; } .telas a:hover { border-color: var(--linha); } .telas a[aria-current] { color: var(--ink); border-color: var(--linha); background: var(--alto); }
+.progresso { margin-left: auto; display: flex; gap: 10px; align-items: center; font-size: 12.5px; color: var(--mudo); }
+.progresso .trilho { width: 160px; height: 6px; background: var(--linha); border-radius: 3px; overflow: hidden; } .progresso .trilho i { display: block; height: 100%; background: var(--ambar); transition: width .3s; }
+.corpo { display: grid; grid-template-columns: 300px minmax(0, 1fr) 400px; gap: 10px; min-height: 0; }
+.painel { background: var(--raia); border-radius: 20px; overflow: auto; padding: 14px; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--linha) transparent; }
+.painel h2 { font: 700 16px "Bricolage Grotesque"; margin: 0 0 4px; }
+.painel h3 { font: 650 12px "Bricolage Grotesque"; color: var(--mudo); margin: 14px 0 7px; text-transform: uppercase; letter-spacing: .05em; display: flex; gap: 8px; align-items: center; }
+.painel h3:first-child { margin-top: 0; }
+p.sub { margin: 0 0 10px; color: var(--mudo); font-size: 12.5px; }
+.mudo { color: var(--mudo); } .apagado { color: var(--apagado); }
+.caminho { width: 100%; text-align: left; border: 1px solid var(--linha); background: var(--alto); border-radius: 14px; padding: 9px 11px; margin-bottom: 6px; display: grid; gap: 3px; }
+.caminho b { font: 650 13.5px "Bricolage Grotesque"; display: flex; gap: 6px; align-items: center; } .caminho small { color: var(--mudo); font-size: 12px; }
+.caminho[aria-pressed=true] { border-color: var(--ambar); background: rgba(232,180,86,.07); }
+.cmd { font: 12px/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--chao); border: 1px solid var(--linha); border-radius: 10px; padding: 7px 9px; white-space: pre-wrap; color: #e9dcc6; margin: 4px 0; }
+.passos { list-style: none; margin: 0; padding: 0; }
+.passos li button { width: 100%; text-align: left; border: 0; background: transparent; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 8px; padding: 5px 4px; border-radius: 10px; font-size: 13px; color: var(--apagado); }
+.passos li button:hover { background: var(--alto); }
+.passos li button .n { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--linha); display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+.passos li.feito button { color: var(--mudo); } .passos li.feito .n { background: rgba(165,211,108,.15); border-color: transparent; color: var(--acacia); }
+.passos li.agora button { color: var(--ink); background: var(--alto); } .passos li.agora .n { background: var(--ambar); color: var(--sobre-cor); border-color: var(--ambar); }
+.passos small { display: block; font-size: 11.5px; color: var(--apagado); }
+/* conversa */
+.conversa { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; padding: 0; overflow: hidden; }
+.conversa .cab { padding: 12px 16px; border-bottom: 1px solid var(--linha); display: flex; gap: 10px; align-items: center; }
+.conversa .cab b { font: 650 14px "Bricolage Grotesque"; }
+.conectores { margin-left: auto; display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
+.conector { font-size: 11px; border: 1px solid var(--linha); border-radius: 99px; padding: 1px 8px; color: var(--mudo); display: inline-flex; gap: 5px; align-items: center; }
+.conector::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--acacia); }
+.conector.jira::before { background: var(--ceu-azul); } .conector.nosso { color: var(--ambar); border-color: rgba(232,180,86,.45); } .conector.nosso::before { background: var(--ambar); }
+.fluxo { overflow: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 9px; scrollbar-width: thin; scrollbar-color: var(--linha) transparent; }
+.marco { align-self: center; font-size: 11.5px; color: var(--apagado); text-transform: uppercase; letter-spacing: .06em; margin: 6px 0 0; }
+.msg { max-width: 82%; border-radius: 14px; padding: 9px 12px; font-size: 13.5px; animation: entra .25s ease-out; }
+@keyframes entra { from { opacity: 0; transform: translateY(4px); } }
+.msg.eu { align-self: flex-end; background: #3a2e21; border-bottom-right-radius: 4px; }
+.msg.ia { align-self: flex-start; background: var(--alto); border: 1px solid var(--linha); border-bottom-left-radius: 4px; }
+.msg .quem { display: block; font-size: 10.5px; color: var(--apagado); margin-bottom: 2px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.msg ul { margin: 4px 0 0; padding-left: 18px; } .msg li { margin: 2px 0; }
+.ferr { align-self: flex-start; font: 12px ui-monospace, Consolas, monospace; color: var(--mudo); border: 1px dashed var(--linha); border-radius: 10px; padding: 5px 9px; animation: entra .25s ease-out; max-width: 90%; }
+.ferr b { color: var(--ambar); font-weight: 400; } .ferr.dele b { color: var(--ceu-azul); }
+.ferr small { display: block; color: var(--apagado); font-family: "Atkinson Hyperlegible", sans-serif; }
+.opcoes { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.opcoes span { font-size: 12px; border: 1px solid var(--linha); border-radius: 99px; padding: 2px 10px; color: var(--mudo); }
+.opcoes span.esc { border-color: var(--ambar); color: var(--ambar); }
+.comandos { padding: 10px 16px 12px; border-top: 1px solid var(--linha); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--linha); background: var(--alto); border-radius: 11px; padding: 6px 12px; font-size: 13px; text-decoration: none; }
+.btn:hover { border-color: var(--apagado); }
+.btn.forte { background: var(--ambar); border-color: var(--ambar); color: var(--sobre-cor); font-weight: 700; }
+.atalho { font-size: 12px; color: var(--apagado); margin-left: auto; }
+/* atmosfera */
+.vazio { color: var(--apagado); font-size: 12.5px; padding: 12px; text-align: center; border: 1px dashed var(--linha); border-radius: 12px; }
+.versao { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 99px; background: rgba(143,182,220,.16); color: var(--ceu-azul); }
+.versao.v1 { background: rgba(165,211,108,.16); color: var(--acacia); }
+.niveis { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+.niveis span.n { background: var(--alto); border-radius: 9px; padding: 4px 9px; } .niveis .seta { color: var(--apagado); }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+td { padding: 4px 4px; border-bottom: 1px solid rgba(58,46,33,.6); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+.conf { font-size: 11px; font-weight: 700; padding: 0 7px; border-radius: 99px; white-space: nowrap; }
+.conf.alta { background: rgba(165,211,108,.14); color: var(--acacia); } .conf.baixa { background: rgba(232,180,86,.2); color: var(--ambar); } .conf.ok { background: rgba(165,211,108,.14); color: var(--acacia); }
+.prot { font-size: 10.5px; color: var(--perigo); border: 1px solid rgba(242,163,138,.4); border-radius: 6px; padding: 0 5px; margin-left: 4px; }
+.times { display: flex; flex-wrap: wrap; gap: 4px; } .times span { font-size: 12px; background: var(--alto); border-radius: 99px; padding: 2px 9px; }
+.cand { background: var(--alto); border-radius: 12px; padding: 8px 10px; margin-bottom: 6px; font-size: 12.5px; display: grid; gap: 3px; border-left: 3px solid var(--ambar); }
+.cand b { font: 650 13px "Bricolage Grotesque"; display: flex; gap: 6px; align-items: center; }
+.cand .st { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--acacia); }
+.plano td:nth-child(n+2) { text-align: right; font-variant-numeric: tabular-nums; }
+.risco { font-size: 10.5px; font-weight: 700; color: var(--mudo); border: 1px solid var(--linha); border-radius: 6px; padding: 0 5px; }
+.dados { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12px; }
+.dados div { background: var(--alto); border-radius: 10px; padding: 7px 9px; } .dados b { display: block; font: 650 12.5px "Bricolage Grotesque"; margin-bottom: 2px; }
+.dados .sai b { color: var(--acacia); } .dados .fica b { color: var(--ceu-azul); }
+.mudou { animation: brilho 1.2s ease-out; } @keyframes brilho { from { box-shadow: 0 0 0 2px var(--ambar); } to { box-shadow: 0 0 0 0 transparent; } }
+.nota { font-size: 12.5px; color: var(--mudo); background: rgba(232,180,86,.06); border: 1px solid rgba(232,180,86,.25); border-radius: 12px; padding: 9px 12px; }
+@media (max-width: 1200px) { .corpo { grid-template-columns: 1fr; } .tela { height: auto; } .conversa { min-height: 600px; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="tela">
+  <header class="topo">
+    <div class="marca">
+      <svg aria-hidden="true" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#d9a13b"/><path d="M18 64V41q0-8 8-9h4v32z" fill="#fff1d2"/><path d="M7 64l11-14 4 14z" fill="#3a2812"/><path d="M41 64L30 50l-4 14z" fill="#3a2812"/><path d="M23 34c0-7 5-11 12-11h7c6 0 10 3 10 7s-4 7-10 7H30c-4 0-7-1-7-3z" fill="#fff1d2"/><circle cx="38" cy="29" r="2.1" fill="#3a2812"/><path d="M28 23v-7q0-3 3-3h6q3 0 3 3v7z" fill="#3a2812"/><rect x="28" y="19.2" width="12" height="2.4" fill="#d9a13b"/><ellipse cx="34" cy="23.2" rx="12.5" ry="2.3" fill="#3a2812"/></svg>
+      <div><h1>Inspetor <span>Jirafalis</span></h1><small>Onboarding · ligar na sua IA e mapear o processo</small></div>
+    </div>
+    <nav class="telas" aria-label="Telas do protótipo"><a href="mesa.html">Mesa do dia</a><a href="escala.html">Investigar</a><a href="regras.html">Regras e cérebro</a><a href="onboarding.html" aria-current="page">Onboarding</a><a href="../index.html">Apresentação</a></nav>
+    <div class="progresso"><span id="prog-txt"></span><span class="trilho"><i id="prog"></i></span></div>
+  </header>
+  <main class="corpo">
+    <aside class="painel" id="esq"></aside>
+    <section class="painel conversa" aria-label="Conversa">
+      <div class="cab"><b id="cab-titulo"></b><span class="conectores" id="conectores"></span></div>
+      <div class="fluxo" id="fluxo" aria-live="polite"></div>
+      <div class="comandos"><button class="btn forte" id="prox">Próximo passo ▸</button><button class="btn" id="tudo">Mostrar tudo</button><button class="btn" id="zera">Recomeçar</button><span class="atalho">→ avança · ← volta</span></div>
+    </section>
+    <aside class="painel" id="dir"></aside>
+  </main>
+</div>
+<script>
+const CAMINHOS = {
+  code: { nome: "Claude Code (plugin)", ic: "⌨", desc: "Para quem já trabalha no terminal. Configura e também pode gravar, com o hook de trava.",
+    cmd: "/plugin marketplace add jirafalis/claude-plugin\n/plugin install jirafalis\n/jirafalis:começar-onboarding", leitor: "claude" },
+  web: { nome: "claude.ai (conector)", ic: "◎", desc: "No navegador ou no app. Configura tudo pela conversa; a gravação vai pelo servidor do Jirafalis.",
+    cmd: "Configurações › Conectores › Adicionar conector personalizado\nURL: https://mcp.exemplo.dev  (ilustrativa)\nEntrar com a conta Jirafalis (OAuth)", leitor: "claude" },
+  api: { nome: "Painel web, sem IA", ic: "▦", desc: "Sem assistente de IA: liga a ferramenta pela API (OAuth) e responde às mesmas perguntas em telas.",
+    cmd: "app.exemplo.dev › Ligar ferramenta › Jira (OAuth, só leitura)\n› GitHub (app, só leitura)", leitor: "api" },
+};
+const PASSOS = [
+  ["Conta e conector", "cria a conta e liga o conector"], ["Começo", "um prompt inicia o roteiro"], ["Ambiente", "quais ferramentas e espaços entram"],
+  ["Leitura de cara", "metadados e uma amostra"], ["Proposta", "a atmosfera do processo v0"], ["Conversa", "só as perguntas de baixa confiança"],
+  ["Confirmação", "atmosfera v1 no painel"], ["Regras candidatas", "o que o histórico já mostra"], ["Regra nova", "em português, do seu jeito"],
+  ["Simulação", "“hoje pegaria 3 itens”"], ["Salvar", "Simulação · júnior"], ["Plano de promoção", "júnior → pleno → sênior"], ["Primeiras regras", "leitura primeiro, escrita com estreia"],
+];
+// Roteiro: [tipo, texto, extra]. tipo: eu | ia | f (ferramenta do Jirafalis) | d (ferramenta do gestor: MCP da ferramenta) | marco
+function roteiro(c) {
+  const api = c === "api", ia = api ? "Assistente do painel" : "Claude";
+  const ler = (claude, srv) => api ? ["f", `jirafalis · ${srv}`, "o servidor do Jirafalis lê pela API, com o OAuth que você deu"] : ["d", claude, "o Claude lê com o seu conector; o token fica com você"];
+  return [
+    [["marco", "Passo 0 · conta e conector"],
+     api ? ["ia", "Conta criada. Ligue a ferramenta de gestão e o git pela API: o pedido de permissão é <b>só de leitura</b>. A escrita é pedida depois, regra por regra."]
+         : ["ia", "O conector <b>Jirafalis</b> foi ligado. Entrei com a sua conta Jirafalis (OAuth). Se você não tivesse conta, eu levaria você à criação.<br><small class='apagado'>O Jirafalis nunca vê nem guarda o seu token do Claude.</small>"],
+     ["f", "jirafalis · status_da_conta", "plano grátis · 1 time · nenhum processo mapeado ainda"]],
+    [["marco", "Passo 1 · começo"],
+     ["eu", api ? "Começar onboarding" : "/jirafalis começar onboarding"],
+     ["f", "jirafalis · iniciar_onboarding", "devolve o roteiro: o que ler, em que ordem, com consultas prontas"],
+     ["ia", `Vou mapear como a sua empresa trabalha, em uns 20 minutos. Leio primeiro e só pergunto o que não der para descobrir. Nada é gravado na sua ferramenta durante o onboarding.`]],
+    [["marco", "Passo 2 · ambiente"],
+     ["ia", api ? "Ferramentas ligadas: <b>Jira</b> e <b>GitHub</b>. Quais espaços entram?" : "Na sua conta do Claude encontrei estes conectores: <b>Jira</b>, <b>GitHub</b> e <b>Slack</b>. Quais espaços entram no Jirafalis?<div class='opcoes'><span class='esc'>9 espaços de produto</span><span>Suporte</span><span>RH</span><span class='esc'>GitHub: 4 repositórios</span><span class='esc'>Slack: canais dos times</span></div>"],
+     ["eu", "Os 9 espaços de produto, os repositórios da org e os canais dos times no Slack."]],
+    [["marco", "Passo 3 · leitura de cara"],
+     ler("jira · listar espaços e tipos de item", "ler_espacos_e_tipos"), ler("jira · listar estados e transições por fluxo", "ler_fluxos"),
+     ler("jira · listar campos (e quais são obrigatórios)", "ler_campos"), ler("jira · buscar itens dos últimos 90 dias (amostra de 300)", "ler_amostra"),
+     ler("github · listar repositórios e PRs ligados a itens", "ler_repositorios"),
+     ["f", "jirafalis · registrar_descoberta", "9 espaços · 4 tipos de item · 11 status · 38 campos · 27 pessoas · 300 itens · 4 repositórios"]],
+    [["marco", "Passo 4 · proposta"],
+     ["ia", "O Jirafalis montou a <b>atmosfera do processo v0</b> (ao lado). <b>84% foi descoberto sem perguntar.</b> Ficaram 4 dúvidas, que eu faço uma de cada vez."]],
+    [["marco", "Passo 5 · conversa"],
+     ["ia", "1/4 · Vi 61 histórias em “Concluído” com data de deploy e 9 sem. Para vocês, <b>“Concluído” é fim do desenvolvimento ou já está em produção?</b>"],
+     ["eu", "Em produção. Fim do desenvolvimento é “Aguardando deploy”."],
+     ["f", "jirafalis · responder_pergunta", "Concluído → Pronto · Aguardando deploy → Em validação"],
+     ["ia", "2/4 · “Aguardando QA” e “Em testes” aparecem em espaços diferentes, sempre depois do PR. <b>São a mesma etapa?</b>"],
+     ["eu", "Sim, mesma etapa."],
+     ["ia", "3/4 · O time <b>Suporte interno</b> não usa sprint e não tem etapa de testes separada. Confirma que é fluxo contínuo?"],
+     ["eu", "Confirmo."],
+     ["ia", "4/4 · Só 3 pessoas movem itens para “Pronto”. <b>É um estado protegido</b> (só uma pessoa responsável move)?"],
+     ["eu", "É. Só o PO de cada time move para Pronto."],
+     ["f", "jirafalis · responder_pergunta", "Pronto marcado como estado protegido: nenhuma regra move para lá"]],
+    [["marco", "Passo 6 · confirmação"],
+     ["ia", "Pronto: todas as dúvidas respondidas. Confere a atmosfera ao lado e me diga se posso confirmar."],
+     ["eu", "Pode confirmar."],
+     ["f", "jirafalis · confirmar_atmosfera", "atmosfera v1 · versionada · aberta no painel"],
+     ["ia", "Confirmada. A <b>atmosfera v1</b> está no painel, com o mapa de níveis, etapas e times. Você pode editar lá ou aqui, quando quiser."]],
+    [["marco", "Passo 7 · regras candidatas"],
+     ["f", "jirafalis · listar_regras_candidatas", "padrões achados no histórico, com evidência"],
+     ["ia", "No histórico, três coisas se repetem e já podem virar regra:<ul><li>Em <b>95%</b> dos casos o épico vai para Em desenvolvimento quando a primeira história começa (PR-01).</li><li><b>41 itens</b> entraram em desenvolvimento sem critério de aceite (PR-10).</li><li>Em <b>4 times</b>, o PR é mergeado e o card fica parado em Em desenvolvimento por 3 dias ou mais (PR-11 + git).</li></ul>Quais valem?"],
+     ["eu", "As três. A do PR, por enquanto só como alerta para mim."]],
+    [["marco", "Passo 8 · regra nova"],
+     ["eu", "Quero uma regra: toda história que for para Em testes precisa ter responsável de testes. Se não tiver, avisa o líder do time no Slack."],
+     ["f", "jirafalis · propor_regra", "padrão PR-10 Cadastro mínimo + aviso no chat · parâmetros com os termos da atmosfera"],
+     ["ia", "É o padrão <b>Cadastro mínimo</b>. Uma dúvida: aviso o líder <b>uma vez por item</b> ou <b>todo dia</b> enquanto faltar?"],
+     ["eu", "Uma vez, e de novo se passar 2 dias úteis. Menos o Suporte interno."]],
+    [["marco", "Passo 9 · simulação"],
+     ["f", "jirafalis · pedir_amostra", "devolve a consulta pronta: itens em Em testes sem Responsável de testes"],
+     ler("jira · buscar itens (consulta pronta do Jirafalis)", "ler_amostra"),
+     ["f", "jirafalis · registrar_amostra", "3 itens → resultado da simulação"],
+     ["ia", "Hoje essa regra pegaria <b>3 itens</b>:<ul><li>#128 Captura da selfie · Onboarding</li><li>#184 Bloqueio por CEP · Antifraude</li><li>#226 Exportação assíncrona · Dados</li></ul>Salvo?"]],
+    [["marco", "Passo 10 · salvar"],
+     ["eu", "Salva."],
+     ["f", "jirafalis · salvar_regra", "Responsável de testes v1 · Simulação · júnior · link do painel"],
+     ["ia", "Salvei as 4 regras no painel, todas em <b>Simulação</b>, no nível <b>júnior</b>. Nenhuma grava nada até você liberar."]],
+    [["marco", "Passo 11 · plano de promoção"],
+     ["ia", "Agora o plano de autonomia. O padrão sugerido depende do risco de cada ação (ao lado). Quer mudar algo? Tem alguma regra em que você <b>já confia</b>?"],
+     ["eu", "Pode usar o padrão. E a do épico eu já confio: o time faz isso há anos."],
+     ["f", "jirafalis · definir_plano_promocao", "limiares por classe · Épico avança com a história nasce sênior por decisão do gestor, com vigilância reforçada por 2 semanas"],
+     ["ia", "Registrado. A regra do épico começa <b>sênior por decisão sua</b>; a ficha mostra isso, e qualquer reversão no Jira a rebaixa."]],
+    [["marco", "Passo 12 · primeiras regras"],
+     ["ia", "Pronto. Amanhã às 9h:<ul><li>as regras de <b>leitura</b> já mostram alertas no painel;</li><li>as de <b>escrita</b> estreiam com <b>1 item</b> cada, esperando o seu Liberar;</li><li>a mensagem no Slack começa <b>ensaiando</b>: você aprova os primeiros textos.</li></ul>O dia a dia fica na mesa do dia. E você pode voltar aqui a qualquer hora: “nova regra”, “revisar meu processo”, “o que o Jirafalis fez esta semana?”."],
+     ["f", "jirafalis · resumo_onboarding", "≈ 18 min · 4 perguntas · 4 regras · atmosfera v1"]],
+  ];
+}
+const S = { c: "web", passo: 0 };
+const $ = s => document.querySelector(s);
+
+function esquerda() {
+  const c = CAMINHOS[S.c];
+  return `<h3>1 · Escolha onde conversar</h3>
+  ${Object.entries(CAMINHOS).map(([k, v]) => `<button class="caminho" data-c="${k}" aria-pressed="${S.c === k}"><b>${v.ic} ${v.nome}</b><small>${v.desc}</small></button>`).join("")}
+  <div class="cmd">${c.cmd}</div>
+  <p class="sub">${S.c === "api" ? "O resultado é o mesmo dos outros caminhos e fica no mesmo lugar." : "É um só servidor MCP remoto nos dois casos. O plugin acrescenta skills e o hook que trava a escrita fora do plano aprovado."}</p>
+  <h3>2 · O roteiro</h3>
+  <ol class="passos">${PASSOS.map(([n, s], i) => `<li class="${i < S.passo ? "feito" : i === S.passo ? "agora" : ""}"><button data-p="${i}"><span class="n">${i < S.passo ? "✓" : i}</span><span>${n}<small>${s}</small></span></button></li>`).join("")}</ol>`;
+}
+function conversa() {
+  const r = roteiro(S.c).slice(0, S.passo + 1).flat();
+  $("#cab-titulo").textContent = S.c === "api" ? "Painel web · assistente de onboarding" : S.c === "code" ? "Claude Code · terminal do gestor" : "claude.ai · conversa do gestor";
+  $("#conectores").innerHTML = S.c === "api" ? `<span class="conector nosso">Jirafalis</span><span class="conector jira">Jira (API)</span><span class="conector">GitHub (API)</span>`
+    : `<span class="conector nosso">Jirafalis</span><span class="conector jira">Jira</span><span class="conector">GitHub</span><span class="conector">Slack</span>`;
+  const ia = S.c === "api" ? "Assistente do painel" : "Claude + Jirafalis";
+  $("#fluxo").innerHTML = r.map(([t, x, e]) => t === "marco" ? `<div class="marco">${x}</div>` : t === "eu" ? `<div class="msg eu"><span class="quem">Gestor</span>${x}</div>`
+    : t === "ia" ? `<div class="msg ia"><span class="quem">${ia}</span>${x}</div>`
+    : `<div class="ferr ${t === "d" ? "dele" : ""}">⚙ <b>${x.split(" · ")[0]}</b> · ${x.split(" · ").slice(1).join(" · ")}${e ? `<small>${e}</small>` : ""}</div>`).join("");
+  $("#fluxo").scrollTop = 1e6;
+}
+function direita() {
+  const p = S.passo, v1 = p >= 6;
+  if (p < 3) return `<h3>Atmosfera do processo</h3><div class="vazio">Ainda vazia. É o modelo do processo da sua empresa: níveis, etapas, campos, times, estados protegidos e exceções. O Jirafalis não traz processo nenhum; ele descobre o seu.</div>
+    <h3>O que passa e o que fica</h3>${dados()}
+    <div class="nota" style="margin-top:10px"><b>Onde ele conversa não importa para configurar.</b> Claude Code, claude.ai ou painel: tudo grava no mesmo lugar. A diferença está em gravar na ferramenta: a conversa nunca é canal de escrita sem trava.</div>`;
+  const resp = p >= 5;
+  const est = [["To Do, Backlog", "A fazer", "alta"], ["In Progress, Desenvolvendo", "Em desenvolvimento", "alta"], ["Code Review, Em PR", "Em revisão (PR)", "alta"],
+    ["Em testes, Aguardando QA", "Em testes", resp ? "ok" : "baixa"], ["Aguardando deploy", "Em validação", resp ? "ok" : "baixa"], ["Concluído, Done", "Pronto", resp ? "ok" : "baixa"]];
+  return `<h3>Atmosfera do processo <span class="versao ${v1 ? "v1" : ""}">${v1 ? "v1 · confirmada" : "v0 · proposta"}</span></h3>
+  <h3>Níveis</h3><div class="niveis"><span class="n">Épico</span><span class="seta">›</span><span class="n">História</span><span class="seta">›</span><span class="n">Task</span><span class="apagado" style="font-size:12px;margin-left:6px">+ Bug (fora da hierarquia)</span></div>
+  <h3>Etapas: status locais → etapa do produto</h3>
+  <table><tbody>${est.map(([l, c, f]) => `<tr><td class="mudo">${l}</td><td>→ <b>${c}</b>${c === "Pronto" && resp ? `<span class="prot">protegido</span>` : ""}</td><td style="text-align:right"><span class="conf ${f}">${f === "alta" ? "lido" : f === "ok" ? "você confirmou" : "pergunta"}</span></td></tr>`).join("")}</tbody></table>
+  <h3>Campos com papel</h3>
+  <table><tbody><tr><td class="mudo">Story Points</td><td>tamanho</td></tr><tr><td class="mudo">QA Owner</td><td>responsável de testes</td></tr><tr><td class="mudo">Acceptance Criteria</td><td>critério de aceite</td></tr><tr><td class="mudo">Squad</td><td>time</td></tr><tr><td class="mudo">Fix Version + deploy no git</td><td>data de entrega</td></tr></tbody></table>
+  <h3>Times (do campo Squad e de quem trabalha junto)</h3>
+  <div class="times">${["Pagamentos", "Onboarding", "Plataforma", "Checkout", "Antifraude", "Mobile", "Dados", "Parcerias", "Suporte interno"].map(t => `<span>${t}${t === "Suporte interno" && resp ? " · fluxo contínuo" : ""}</span>`).join("")}</div>
+  <h3>Referência de tempo por etapa (dias úteis, do histórico)</h3>
+  <table><tbody><tr><td class="mudo">A fazer 3 · Desenvolvimento 4 · PR 2 · Testes 2 · Validação 2</td></tr></tbody></table>
+  ${p >= 7 ? `<h3>Regras</h3>
+  <div class="cand"><b>Épico avança com a história <span class="st">${p >= 11 ? "sênior por decisão" : p >= 10 ? "salva · júnior" : "aceita"}</span></b>PR-01 · 95% no histórico</div>
+  <div class="cand"><b>Cadastro mínimo da história <span class="st">${p >= 10 ? "salva · júnior" : "aceita"}</span></b>PR-10 · 41 itens sem critério de aceite</div>
+  <div class="cand"><b>PR mergeado com card parado <span class="st">${p >= 10 ? "salva · alerta" : "aceita (só alerta)"}</span></b>PR-11 + git · 4 times</div>
+  ${p >= 8 ? `<div class="cand"><b>Responsável de testes <span class="st">${p >= 10 ? "salva · júnior" : p >= 9 ? "simulada: 3 itens" : "rascunho"}</span></b>PR-10 + aviso no chat · exceto Suporte interno · repete a cada 2 dias úteis</div>` : ""}` : ""}
+  ${p >= 11 ? `<h3>Plano de promoção</h3>
+  <table class="plano"><tbody><tr><td><span class="risco">R0</span> leitura</td><td>nasce sênior</td><td>—</td></tr><tr><td><span class="risco">R1</span> campo silencioso</td><td>≥ 0,85</td><td>5 d úteis</td></tr><tr><td><span class="risco">R2</span> fluxo visível</td><td>≥ 0,92</td><td>10 d úteis</td></tr><tr><td><span class="risco">R3</span> mensagem a pessoas</td><td>≥ 0,95 no ensaio</td><td>15 d úteis</td></tr></tbody></table>
+  <p class="sub" style="margin-top:6px">Júnior → pleno pela confiança; pleno → sênior por tempo, com portões.</p>` : ""}
+  ${p >= 12 ? `<div class="botoes" style="margin-top:10px"><a class="btn forte" href="mesa.html">Abrir a mesa do dia ▸</a></div>` : ""}
+  <h3>O que passa e o que fica</h3>${dados()}`;
+}
+function dados() {
+  return `<div class="dados"><div class="sai"><b>Passa pelo Jirafalis</b>nomes de espaços, tipos, status e campos; contagens; pessoas (id e nome); amostras com os campos que a regra usa; suas respostas</div>
+  <div class="fica"><b>Fica com você</b>token do Claude; token da ferramenta (no caminho do conector); texto livre dos cards, salvo se uma regra pedir; anexos</div></div>`;
+}
+function render(mudou) {
+  $("#esq").innerHTML = esquerda(); conversa(); $("#dir").innerHTML = direita();
+  if (mudou) $("#dir").classList.add("mudou"), setTimeout(() => $("#dir").classList.remove("mudou"), 1200);
+  $("#prog").style.width = (S.passo / (PASSOS.length - 1) * 100) + "%";
+  $("#prog-txt").textContent = `passo ${S.passo} de ${PASSOS.length - 1}`;
+  $("#prox").disabled = S.passo === PASSOS.length - 1;
+}
+const ir = p => { S.passo = Math.max(0, Math.min(PASSOS.length - 1, p)); render(true); };
+document.addEventListener("click", e => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.c) { S.c = t.dataset.c; render(); }
+  else if (t.dataset.p) ir(+t.dataset.p);
+  else if (t.id === "prox") ir(S.passo + 1);
+  else if (t.id === "tudo") ir(PASSOS.length - 1);
+  else if (t.id === "zera") ir(0);
+});
+document.addEventListener("keydown", e => { if (e.key === "ArrowRight") ir(S.passo + 1); if (e.key === "ArrowLeft") ir(S.passo - 1); });
+const h = location.hash.slice(1).match(/^(code|web|api)?-?(\d+)?$/);
+if (h && h[1]) S.c = h[1]; if (h && h[2]) S.passo = Math.min(+h[2], PASSOS.length - 1);
+render();
+</script>
+</body>
+</html>
